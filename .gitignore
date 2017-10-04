@@ -40,3 +40,5 @@ venv.bak/
 .coverage
 htmlcov
 
+# Visual Studio Code
+.vscode
