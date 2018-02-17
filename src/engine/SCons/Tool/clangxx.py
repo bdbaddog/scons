@@ -46,7 +46,7 @@ import sys
 import SCons.Tool
 import SCons.Util
 import SCons.Tool.cxx
-from SCons.Tool.clang import get_clang_install_dirs
+from SCons.Tool.clangCommon import get_clang_install_dirs
 
 
 compilers = ['clang++']
@@ -56,9 +56,6 @@ def generate(env):
     static_obj, shared_obj = SCons.Tool.createObjBuilders(env)
 
     SCons.Tool.cxx.generate(env)
-
-    env['CXX']        = env.Detect(compilers) or 'clang++'
-
     # platform specific settings
     if env['PLATFORM'] == 'aix':
         env['SHCXXFLAGS'] = SCons.Util.CLVar('$CXXFLAGS -mminimal-toc')
@@ -69,11 +66,29 @@ def generate(env):
     elif env['PLATFORM'] == 'sunos':
         env['SHOBJSUFFIX'] = '.pic.o'
     elif env['PLATFORM'] == 'win32':
+
+        if 'msvc' in env['TOOLS']:
+            # we have msvc env setup so we want to us MSVC compatible clang-cl
+            compilers[0] = 'clang-cl'
+            env['SHCCFLAGS'] = SCons.Util.CLVar('$CCFLAGS')
+        else:
+            if env['PLATFORM'] in ['cygwin', 'win32']:
+                env['SHCCFLAGS'] = SCons.Util.CLVar('$CCFLAGS')
+                # for static linking with cygwin env, we still need ar
+                ar = SCons.Tool.find_program_path(env, 'ar', default_paths=get_clang_install_dirs(env['PLATFORM']))
+                if ar:
+                    ar_bin_dir = os.path.dirname(ar)
+                    env.AppendENVPath('PATH', ar_bin_dir)
+            else: # must be standard linux like platform
+                env['SHCCFLAGS'] = SCons.Util.CLVar('$CCFLAGS -fPIC')
+
         # Ensure that we have a proper path for clang++
         clangxx = SCons.Tool.find_program_path(env, compilers[0], default_paths=get_clang_install_dirs(env['PLATFORM']))
         if clangxx:
             clangxx_bin_dir = os.path.dirname(clangxx)
             env.AppendENVPath('PATH', clangxx_bin_dir)
+
+    env['CXX']        = env.Detect(compilers) or 'clang++'
 
     # determine compiler version
     if env['CXX']:

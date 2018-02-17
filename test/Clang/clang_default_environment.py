@@ -25,21 +25,27 @@
 __revision__ = "__FILE__ __REVISION__ __DATE__ __DEVELOPER__"
 
 import TestSCons
+import sys
 
 _exe = TestSCons._exe
 test = TestSCons.TestSCons()
 
-if not test.where_is('clang'):
-    test.skip_test("Could not find 'clang', skipping test.\n")
+if(sys.platform == 'win32'):
+    clang_tool = 'clang-cl'
+else:
+    clang_tool = 'clang'
+
+if not test.where_is(clang_tool):
+    test.skip_test("Could not find '" + clang_tool + "', skipping test.\n")
 
 ##  This will likely NOT use clang
 
 test.write('SConstruct', """
 env = Environment()
-if env['CC'] != 'clang':
-    env['CC'] = 'clang'
+if env['CC'] != '%s':
+    env['CC'] = '%s'
 env.Program('foo.c')
-""")
+""" % (clang_tool,clang_tool))
 
 test.write('foo.c', """\
 #include <stdio.h>

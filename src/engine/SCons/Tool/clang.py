@@ -45,7 +45,7 @@ import sys
 
 import SCons.Util
 import SCons.Tool.cc
-from SCons.Tool.clang import get_clang_install_dirs
+from SCons.Tool.clangCommon import get_clang_install_dirs
 
 
 compilers = ['clang']
@@ -53,19 +53,30 @@ compilers = ['clang']
 def generate(env):
     """Add Builders and construction variables for clang to an Environment."""
     SCons.Tool.cc.generate(env)
-
+    
     if env['PLATFORM'] == 'win32':
+        # we have msvc env setup so we want to us MSVC compatible clang-cl
+        if 'msvc' in env['TOOLS']:
+            compilers[0] = 'clang-cl'
+            env['SHCCFLAGS'] = SCons.Util.CLVar('$CCFLAGS')
+        else:
+            if env['PLATFORM'] in ['cygwin', 'win32']:
+                env['SHCCFLAGS'] = SCons.Util.CLVar('$CCFLAGS')
+                # for static linking with cygwin env, we still need ar
+                ar = SCons.Tool.find_program_path(env, 'ar', default_paths=get_clang_install_dirs(env['PLATFORM']))
+                if ar:
+                    ar_bin_dir = os.path.dirname(ar)
+                    env.AppendENVPath('PATH', ar_bin_dir)
+            else: # must be linux or linux like
+                env['SHCCFLAGS'] = SCons.Util.CLVar('$CCFLAGS -fPIC')
+            
         # Ensure that we have a proper path for clang
         clang = SCons.Tool.find_program_path(env, compilers[0], default_paths=get_clang_install_dirs(env['PLATFORM']))
         if clang:
             clang_bin_dir = os.path.dirname(clang)
             env.AppendENVPath('PATH', clang_bin_dir)
-
+        
     env['CC'] = env.Detect(compilers) or 'clang'
-    if env['PLATFORM'] in ['cygwin', 'win32']:
-        env['SHCCFLAGS'] = SCons.Util.CLVar('$CCFLAGS')
-    else:
-        env['SHCCFLAGS'] = SCons.Util.CLVar('$CCFLAGS -fPIC')
 
     # determine compiler version
     if env['CC']:

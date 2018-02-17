@@ -43,11 +43,13 @@ import SCons.Errors
 import SCons.Platform.win32
 import SCons.Tool
 import SCons.Tool.msvs
+import SCons.Tool.clang
 import SCons.Util
 import SCons.Warnings
 import SCons.Scanner.RC
 
 from .MSCommon import msvc_exists, msvc_setup_env_once, msvc_version_to_maj_min
+from SCons.Tool.clangCommon import get_clang_install_dirs
 
 CSuffixes = ['.c', '.C']
 CXXSuffixes = ['.cc', '.cpp', '.cxx', '.c++', '.C++']
@@ -213,6 +215,12 @@ ShCXXAction = SCons.Action.Action("$SHCXXCOM", "$SHCXXCOMSTR",
 def generate(env):
     """Add Builders and construction variables for MSVC++ to an Environment."""
     static_obj, shared_obj = SCons.Tool.createObjBuilders(env)
+
+    # add msvc clang-cl, later it will be over written with msvc cl, but the path is setup should the user want 
+    # use it as the CC or CXX compiler
+    clang = SCons.Tool.find_program_path(env, 'clang-cl', default_paths=get_clang_install_dirs(env['PLATFORM']))
+    if clang:
+        SCons.Tool.clang.generate(env)
 
     # TODO(batch):  shouldn't reach in to cmdgen this way; necessary
     # for now to bypass the checks in Builder.DictCmdGenerator.__call__()

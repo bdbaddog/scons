@@ -109,9 +109,16 @@ SCons.Tool.SourceFileScanner.add_scanner('.rc', SCons.Defaults.CScan)
 # This is what we search for to find mingw:
 key_program = 'mingw32-gcc'
 
+mingw_windows_default_paths = [
+    r'c:\MinGW\bin',
+    r'C:\cygwin64\bin',
+    r'C:\msys64',
+    r'C:\cygwin\bin',
+    r'C:\msys',
+]
 
 def generate(env):
-    mingw = SCons.Tool.find_program_path(env, key_program, default_paths=[r'c:\MinGW\bin',])
+    mingw = SCons.Tool.find_program_path(env, key_program, default_paths=mingw_windows_default_paths)
     if mingw:
         mingw_bin_dir = os.path.dirname(mingw)
         env.AppendENVPath('PATH', mingw_bin_dir)
@@ -156,7 +163,7 @@ def generate(env):
     env['PROGSUFFIX'] = '.exe'
 
 def exists(env):
-    return find(env)
+    return SCons.Tool.find_program_path(env, key_program, default_paths=mingw_windows_default_paths)
 
 # Local Variables:
 # tab-width:4

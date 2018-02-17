@@ -41,7 +41,7 @@ elif platform == 'darwin':
     filename = 'foo.os'
     libraryname = 'libfoo.dylib'
 elif platform == 'win32':
-    filename = 'foo.obj'
+    filename = 'foo.os'
     libraryname = 'foo.dll'
 else:
     test.fail_test()
