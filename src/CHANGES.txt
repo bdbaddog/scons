@@ -15,7 +15,7 @@ RELEASE 3.1.0.alpha.yyyymmdd - NEW DATE WILL BE INSERTED HERE
     - Fix the PATH created by scons.bat (and other .bat files) to provide a normalized
       PATH.  Some pythons in the 3.6 series are no longer able to handle paths which
       have ".." in them and end up crashing.  This is done by cd'ing into the directory
-      we want to add to the path and then useing %CD% to give us the normalized directory
+      we want to add to the path and then using %CD% to give us the normalized directory
       See bug filed under Python 3.6: https://bugs.python.org/issue32457.
       Note: On Win32 PATH's which have not been normalized may cause undefined behavior
       by other executables being run by SCons (or any subprocesses of executables being run by SCons).
@@ -27,7 +27,7 @@ RELEASE 3.1.0.alpha.yyyymmdd - NEW DATE WILL BE INSERTED HERE
     - Fix issue # 3106 MSVC if using MSVC_BATCH and target dir had a space would fail due to quirk in
       MSVC's handling of escaped targetdirs when batch compiling.
     - Re-Enable parallel SCons (-j) when running via Pypy
-    - Move SCons test framework files to testing/framework and remove all references to QMtest.  
+    - Move SCons test framework files to testing/framework and remove all references to QMtest.
       QMTest has not been used by SCons for some time now.
     - Updated logic for mingw and clang on win32 to search default tool install paths if not
       found in normal SCons PATH.  If the user specifies PATH or tool specific paths they
@@ -38,6 +38,8 @@ RELEASE 3.1.0.alpha.yyyymmdd - NEW DATE WILL BE INSERTED HERE
     - Fix GH Issue #3141 unicode string in a TryAction() with python 2.7 crashes.
     - Fixed issue causing stack trace when python Action function contains a unicode string when being
       run with Python 2.7
+    - Fix issue #2980 with credit to William Blevins.  This is an issue where using TimeStamp-MD5 Decider
+      and CacheDir can yield incorrect md5's being written into the .sconsign.
 
   From Andrew Featherstone
     - Removed unused --warn options from the man page and source code.
