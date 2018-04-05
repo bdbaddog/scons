@@ -1349,15 +1349,8 @@ class NodeListTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    suite = unittest.TestSuite()
-    tclasses = [ BuildInfoBaseTestCase,
-                 NodeInfoBaseTestCase,
-                 NodeTestCase,
-                 NodeListTestCase ]
-    for tclass in tclasses:
-        names = unittest.getTestCaseNames(tclass, 'test_')
-        suite.addTests(list(map(tclass, names)))
-    TestUnit.run(suite)
+    unittest.main()
+
 
 # Local Variables:
 # tab-width:4
