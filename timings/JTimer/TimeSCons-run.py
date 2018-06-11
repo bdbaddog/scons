@@ -56,8 +56,9 @@ import TestSCons
 #
 # The fact that this varies so much suggests that it's pretty
 # non-deterministic, which makes sense for a test involving -j.
+import TimeSCons
 
-test = TestSCons.TimeSCons(variables={'TARGET_COUNT':136})
+test = TimeSCons.TimeSCons(variables={'TARGET_COUNT':136})
 
 test.main()
 

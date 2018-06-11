@@ -44,8 +44,9 @@ import TestSCons
 # run   6:   9.972:  DIR_COUNT=813
 # run   7:   9.930:  DIR_COUNT=813
 # run   8:   9.983:  DIR_COUNT=813
+import TimeSCons
 
-test = TestSCons.TimeSCons(variables={'DIR_COUNT':813})
+test = TimeSCons.TimeSCons(variables={'DIR_COUNT':813})
 
 for d in range(test.variables['DIR_COUNT']):
     test.subdir('inc_%04d' % d)

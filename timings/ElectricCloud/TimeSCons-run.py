@@ -22,6 +22,8 @@
 #
 from __future__ import print_function
 
+import TimeSCons
+
 """
 This configuration comes from the following blog article:
 
@@ -67,7 +69,7 @@ import TestSCons
 
 import os
 
-test = TestSCons.TimeSCons(variables={
+test = TimeSCons.TimeSCons(variables={
     'NUMBER_OF_LEVELS'      : 2,
     'DIRECTORIES_PER_LEVEL' : 3,
     'FILES_PER_DIRECTORY'   : 60,

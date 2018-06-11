@@ -43,8 +43,9 @@ import TestSCons
 # run   5:   9.798:  TARGET_COUNT=139
 # run   6:   9.695:  TARGET_COUNT=139
 # run   7:   9.670:  TARGET_COUNT=139
+import TimeSCons
 
-test = TestSCons.TimeSCons(variables={'TARGET_COUNT':139})
+test = TimeSCons.TimeSCons(variables={'TARGET_COUNT':139})
 
 for t in range(test.variables['TARGET_COUNT']):
     open('source_%04d' % t, 'wb' ).write('contents\n')

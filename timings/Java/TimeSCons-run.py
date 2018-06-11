@@ -37,8 +37,9 @@ import TestSCons
 # run   2:   9.692:  JAVA_COUNT=68
 # run   3:   9.654:  JAVA_COUNT=68
 # run   4:   9.635:  JAVA_COUNT=68
+import TimeSCons
 
-test = TestSCons.TimeSCons(variables={'JAVA_COUNT':68})
+test = TimeSCons.TimeSCons(variables={'JAVA_COUNT':68})
 
 test.subdir('src')
 
