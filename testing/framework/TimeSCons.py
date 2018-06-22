@@ -43,7 +43,7 @@ class TimeSCons(TestSCons):
     """Class for timing SCons."""
     def __init__(self, *args, **kw):
         """
-        In addition to normal TestSCons.TestSCons intialization,
+        In addition to normal TestSCons.TestSCons initialization,
         this enables verbose mode (which causes the command lines to
         be displayed in the output) and copies the contents of the
         directory containing the executing script to the temporary
