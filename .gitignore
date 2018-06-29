@@ -43,3 +43,4 @@ htmlcov
 
 # VS Code
 .vscode
+!/test/Decider/switch-rebuild.py
