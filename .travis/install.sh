@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -x
 
+# setup clang for clang tests using local clang installation
+sudo ln -s /usr/local/clang-5.0.0/bin/clang /usr/bin/clang
+sudo ln -s /usr/local/clang-5.0.0/bin/clang++ /usr/bin/clang++
 
 if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
     echo "OSX"
@@ -13,7 +16,7 @@ else
     # dependencies for docbook tests
     sudo apt-get -y install docbook-xml xsltproc libxml2-dev libxslt-dev fop docbook-xsl-doc-pdf
     # dependencies for latex tests
-    sudo apt-get -y install texlive-full biber texmaker
+    sudo apt-get -y install texlive texlive-latex3 biber texmaker ghostscript
     # need some things for building dependencies for other tests
     sudo apt-get -y install python-pip python-dev build-essential libpcre3-dev autoconf automake libtool bison subversion git
     # dependencies for docbook tests continued

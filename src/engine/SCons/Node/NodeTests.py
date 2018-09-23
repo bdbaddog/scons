@@ -30,8 +30,6 @@ import re
 import sys
 import unittest
 
-import TestUnit
-
 import SCons.Errors
 import SCons.Node
 import SCons.Util
@@ -1350,7 +1348,6 @@ class NodeListTestCase(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
 
 # Local Variables:
 # tab-width:4
