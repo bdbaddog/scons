@@ -24,41 +24,41 @@
 
 __revision__ = "__FILE__ __REVISION__ __DATE__ __DEVELOPER__"
 
-"""
-Verify that two different environments can be used for the same target,
-so long as the actions have the same signature; a warning is generated.
-"""
+import os
 
 import TestSCons
 
-test = TestSCons.TestSCons(match=TestSCons.match_re)
+_python_ = TestSCons._python_
+_exe   = TestSCons._exe
 
-test.write('SConstruct', """\
-DefaultEnvironment(tools=[])
+test = TestSCons.TestSCons()
 
-def build(env, target, source):
-    file = open(str(target[0]), 'wb')
-    for s in source:
-        file.write(open(str(s), 'rb').read())
 
-B = Builder(action=build, multi=1)
-env = Environment(tools=[], BUILDERS = { 'B' : B })
-env2 = env.Clone(DIFFERENT_VARIABLE = 'true')
-env.B(target = 'file5.out', source = 'file5a.in')
-env2.B(target = 'file5.out', source = 'file5b.in')
+test.write('foo.c', r"""
+#include <stdio.h>
+#include <stdlib.h>
+int
+main(int argc, char *argv[])
+{
+        argv[argc++] = "--";
+        printf("foo.c\n");
+        exit (0);
+}
 """)
 
-test.write('file5a.in', 'file5a.in\n')
-test.write('file5b.in', 'file5b.in\n')
+#  Test issue # 2580
+test.write('SConstruct', """
+DefaultEnvironment(tools=[])
+env = Environment(PLATFORM='darwin')
+env.Object(
+	target = '#foo.o',
+	source = ['foo.c'],
+	FRAMEWORKS = ['Ogre'],
+	FRAMEWORKPATH = ['#frameworks']
+)
+""" % locals())
 
-expect = TestSCons.re_escape("""
-scons: warning: Two different environments were specified for target file5.out,
-\tbut they appear to have the same action: build(target, source, env)
-""") + TestSCons.file_expr
-
-test.run(arguments='file5.out', stderr=expect)
-
-test.must_match('file5.out', "file5a.in\nfile5b.in\n")
+test.run(arguments='-Q -n', stdout='gcc -o foo.o -c -Fframeworks foo.c\n')
 
 test.pass_test()
 
