@@ -31,10 +31,11 @@ selection method.
 #
 
 __revision__ = "__FILE__ __REVISION__ __DATE__ __DEVELOPER__"
+import os
+import glob
 
 import SCons.Builder
 import SCons.Action
-import os
 
 def generate(env):
     """Add Builders and construction variables for WiX to an Environment."""
@@ -94,6 +95,15 @@ def exists(env):
                 return 1
         except OSError:
             pass # ignore this, could be a stale PATH entry.
+
+    # Wix is not in shell's PATH. Let's look in typical install locations
+    wix_path=r'C:\Program Files (x86)\WiX Toolset v*.*\bin'
+    wix_installs = glob.glob(wix_path)
+    confirmed_installs = []
+    for p in wix_installs:
+        if os.path.isfile(os.path.join(p,env['WIXCANDLE'])) and os.path.isfile(os.path.join(p,env['WIXLIGHT'])):
+            confirmed_installs.append(p)
+            env.PrependENVPath('PATH', p)
 
     return None
 
