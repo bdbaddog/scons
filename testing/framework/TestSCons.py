@@ -418,6 +418,10 @@ class TestSCons(TestCommon):
 #        TestCommon.run(self, *args, **kw)
 
     def up_to_date(self, arguments = '.', read_str = "", **kw):
+        """Asserts that all of the targets listed in arguments is
+        up to date, but does not make any assumptions on other targets.
+        This function is most useful in conjunction with the -n option.
+        """
         s = ""
         for arg in arguments.split():
             s = s + "scons: `%s' is up to date.\n" % arg
@@ -853,11 +857,15 @@ class TestSCons(TestCommon):
                 fmt = "Could not find javac for Java version %s, skipping test(s).\n"
                 self.skip_test(fmt % version)
         else:
-            m = re.search(r'javac (\d\.\d)', self.stderr())
+            m = re.search(r'javac (\d\.*\d)', self.stderr())
+            # Java 11 outputs this to stdout
+            if not m:
+                m = re.search(r'javac (\d\.*\d)', self.stdout())
+
             if m:
                 version = m.group(1)
                 self.javac_is_gcj = False
-            elif self.stderr().find('gcj'):
+            elif self.stderr().find('gcj') != -1:
                 version='1.2'
                 self.javac_is_gcj = True
             else:
@@ -1278,11 +1286,9 @@ SConscript( sconscript )
         if sys.platform == 'win32':
             self.run(program=python, stdin="""\
 import sysconfig, sys, os.path
-try:
-        py_ver = 'python%d%d' % sys.version_info[:2]
-except AttributeError:
-    py_ver = 'python' + sys.version[:3]
-# print include and lib path
+py_ver = 'python%d%d' % sys.version_info[:2]
+# use distutils to help find include and lib path
+# TODO: PY3 fine to use sysconfig.get_config_var("INCLUDEPY")
 try:
     import distutils.sysconfig
     exec_prefix = distutils.sysconfig.EXEC_PREFIX
@@ -1290,12 +1296,23 @@ try:
     print(include)
     lib_path = os.path.join(exec_prefix, 'libs')
     if not os.path.exists(lib_path):
+        # check for virtualenv path.
+        # this might not build anything different than first try.
+        def venv_path():
+            if hasattr(sys, 'real_prefix'):
+                return sys.real_prefix
+            if hasattr(sys, 'base_prefix'):
+                return sys.base_prefix
+        lib_path = os.path.join(venv_path(), 'libs')
+    if not os.path.exists(lib_path):
+        # not clear this is useful: 'lib' does not contain linkable libs
         lib_path = os.path.join(exec_prefix, 'lib')
     print(lib_path)
 except:
     include = os.path.join(sys.prefix, 'include', py_ver)
     print(include)
-    print(os.path.join(sys.prefix, 'lib', py_ver, 'config'))
+    lib_path = os.path.join(sys.prefix, 'lib', py_ver, 'config')
+    print(lib_path)
 print(py_ver)
 Python_h = os.path.join(include, "Python.h")
 if os.path.exists(Python_h):

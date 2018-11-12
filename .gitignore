@@ -41,3 +41,9 @@ htmlcov
 
 # VS Code
 .vscode
+
+# Editor junk
+*.swp
+*.bkp
+*.bak
+*~
