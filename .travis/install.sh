@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
 set -x
 
-# setup clang for clang tests using local clang installation
-sudo ln -s /usr/local/clang-5.0.0/bin/clang /usr/bin/clang
-sudo ln -s /usr/local/clang-5.0.0/bin/clang++ /usr/bin/clang++
-
 if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
     echo "OSX"
     brew install python --framework --universal
 else
     # dependencies for clang tests
     sudo apt-get -y install clang
+
+    if [ ! -f /usr/local/clang-5.0.0/bin/clang ]; then
+        echo "No Clang 5.0.0 trying 7.0.0"
+        sudo ln -s /usr/local/clang-7.0.0/bin/clang /usr/bin/clang
+        sudo ln -s /usr/local/clang-7.0.0/bin/clang++ /usr/bin/clang++
+    else
+        echo "Clang 5.0.0"
+        sudo ln -s /usr/local/clang-5.0.0/bin/clang /usr/bin/clang
+        sudo ln -s /usr/local/clang-5.0.0/bin/clang++ /usr/bin/clang++
+    fi
+
     # dependencies for gdc tests
     sudo apt-get -y install gdc
     # dependencies for docbook tests
