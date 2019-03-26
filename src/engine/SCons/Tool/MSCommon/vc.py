@@ -282,6 +282,10 @@ def find_vc_pdir_vswhere(msvc_version):
     """
     Find the MSVC product directory using vswhere.exe.
 
+    From github.com/Microsoft/vssetup.powershell (MIT Licensed)
+    VersionRangePattern = @"^((\d+(\.\d+){1,3})|([\[\(]\s*(\d+(\.\d+){1,3})?\s*(,\s*(\d+(\.\d+){1,3})?)?\s*[\]\)]))$";
+
+
     Run it asking for specified version and get MSVS  install location
     :param msvc_version:
     :return: MSVC install dir or None
@@ -293,7 +297,8 @@ def find_vc_pdir_vswhere(msvc_version):
         'Installer',
         'vswhere.exe'
     )
-    vswhere_cmd = [vswhere_path, '-products', '*', '-version', msvc_version, '-property', 'installationPath']
+    vswhere_cmd = [vswhere_path, '-products', '*', '-version', msvc_version,'-prerelease', '-property', 'installationPath']
+    debug("Running vswhere to find installed tools: %s" % " ".join(vswhere_cmd))
 
     if os.path.exists(vswhere_path):
         #TODO PY27 cannot use Popen as context manager
@@ -303,6 +308,8 @@ def find_vc_pdir_vswhere(msvc_version):
                               stderr=subprocess.PIPE)
         vsdir, err = sp.communicate()
         if vsdir:
+            debug("vswhere output: %s" % vsdir)
+
             vsdir = vsdir.decode("mbcs").splitlines()
             # vswhere could easily return multiple lines
             # we could define a way to pick the one we prefer, but since
