@@ -51,12 +51,15 @@ import SCons.Scanner.D
 import SCons.Scanner.LaTeX
 import SCons.Scanner.Prog
 import SCons.Scanner.SWIG
+
 try:
     # Python 3
     from collections.abc import Callable
 except ImportError:
     # Python 2.7
     from collections import Callable
+
+from collections import namedtuple
 
 DefaultToolpath = []
 
@@ -1183,90 +1186,146 @@ def FindAllTools(tools, env):
     return list(filter(ToolExists, tools))
 
 
+PlatformToolList = namedtuple('PlatformToolList',
+                              ['linkers', 'c_compilers', 'cxx_compilers',
+                               'assemblers', 'fortran_compilers', 'ars', 'other_plat_tools'])
+
+# The search orders here are described in the man page.  If you
+# change these search orders, update the man page as well.
+all_plat_tools = {
+    'win32': PlatformToolList(
+        # "prefer Microsoft tools on Windows"
+        linkers=['mslink', 'gnulink', 'ilink', 'linkloc', 'ilink32'],
+        c_compilers=['msvc', 'mingw', 'gcc', 'intelc', 'icl', 'icc', 'cc', 'bcc32'],
+        cxx_compilers=['msvc', 'intelc', 'icc', 'g++', 'cxx', 'bcc32'],
+        assemblers=['masm', 'nasm', 'gas', '386asm'],
+        fortran_compilers=['gfortran', 'g77', 'ifl', 'cvf', 'f95', 'f90', 'fortran'],
+        ars=['mslib', 'ar', 'tlib'],
+        other_plat_tools=['msvs', 'midl'],
+    ),
+    'os2': PlatformToolList(
+        # "prefer IBM tools on OS/2"
+        linkers=['ilink', 'gnulink', ],
+        c_compilers=['icc', 'gcc', ],
+        cxx_compilers=['icc', 'g++', ],
+        assemblers=['nasm', ],
+        fortran_compilers=['ifl', 'g77'],
+        ars=['ar', ],
+        other_plat_tools=['m4', 'rpm'],
+    ),
+    'irix': PlatformToolList(
+        # "prefer MIPSPro on IRIX"
+        linkers=['sgilink', 'gnulink'],
+        c_compilers=['sgicc', 'gcc', 'cc'],
+        cxx_compilers=['sgicxx', 'g++', 'cxx'],
+        assemblers=['as', 'gas'],
+        fortran_compilers=['f95', 'f90', 'f77', 'g77', 'fortran'],
+        ars=['sgiar'],
+        other_plat_tools=['m4', 'rpm'],
+    ),
+    'sunos': PlatformToolList(
+        # "prefer Forte tools on SunOS"
+        linkers=['sunlink', 'gnulink'],
+        c_compilers=['suncc', 'gcc', 'cc'],
+        cxx_compilers=['suncxx', 'g++', 'cxx'],
+        assemblers=['as', 'gas'],
+        fortran_compilers=['sunf95', 'sunf90', 'sunf77', 'f95', 'f90', 'f77',
+                           'gfortran', 'g77', 'fortran'],
+        ars=['sunar'],
+        other_plat_tools=['m4', 'rpm'],
+    ),
+    'hpux': PlatformToolList(
+        # "prefer aCC tools on HP-UX"
+        linkers=['hplink', 'gnulink'],
+        c_compilers=['hpcc', 'gcc', 'cc'],
+        cxx_compilers=['hpcxx', 'g++', 'cxx'],
+        assemblers=['as', 'gas'],
+        fortran_compilers=['f95', 'f90', 'f77', 'g77', 'fortran'],
+        ars=['ar'],
+        other_plat_tools=['m4', 'rpm'],
+    ),
+    'aix': PlatformToolList(
+        # "prefer AIX Visual Age tools on AIX"
+        linkers=['aixlink', 'gnulink'],
+        c_compilers=['aixcc', 'gcc', 'cc'],
+        cxx_compilers=['aixcxx', 'g++', 'cxx'],
+        assemblers=['as', 'gas'],
+        fortran_compilers=['f95', 'f90', 'aixf77', 'g77', 'fortran'],
+        ars=['ar'],
+        other_plat_tools=['m4', 'rpm'],
+    ),
+    'darwin': PlatformToolList(
+        # "prefer GNU tools on Mac OS X, except for some linkers and IBM tools"
+        linkers=['applelink', 'gnulink'],
+        c_compilers=['gcc', 'cc'],
+        cxx_compilers=['g++', 'cxx'],
+        assemblers=['as'],
+        fortran_compilers=['gfortran', 'f95', 'f90', 'g77'],
+        ars=['ar'],
+        other_plat_tools=['m4', 'rpm'],
+    ),
+    'cygwin': PlatformToolList(
+        # "prefer GNU tools on Cygwin, except for a platform-specific linker"
+        linkers=['cyglink', 'mslink', 'ilink'],
+        c_compilers=['gcc', 'msvc', 'intelc', 'icc', 'cc'],
+        cxx_compilers=['g++', 'msvc', 'intelc', 'icc', 'cxx'],
+        assemblers=['gas', 'nasm', 'masm'],
+        fortran_compilers=['gfortran', 'g77', 'ifort', 'ifl', 'f95', 'f90', 'f77'],
+        ars=['ar', 'mslib'],
+        other_plat_tools=['m4', 'rpm'],
+    ),
+    'default': PlatformToolList(
+        # "prefer GNU tools on all other platforms"
+        linkers=['gnulink', 'ilink'],
+        c_compilers=['gcc', 'intelc', 'icc', 'cc'],
+        cxx_compilers=['g++', 'intelc', 'icc', 'cxx'],
+        assemblers=['gas', 'nasm', 'masm'],
+        fortran_compilers=['gfortran', 'g77', 'ifort', 'ifl', 'f95', 'f90', 'f77'],
+        ars=['ar', ],
+        other_plat_tools=['m4', 'rpm'],
+    )
+}
+
+d_compilers = ['dmd', 'ldc', 'gdc']
+
+extra_tools = [
+        # TODO: merge 'install' into 'filesystem' and
+        # make 'filesystem' the default
+        'filesystem',
+        'wix',  # 'midl', 'msvs',
+        # Parser generators
+        'lex', 'yacc',
+        # Foreign function interface
+        'rpcgen', 'swig',
+        # Java
+        'jar', 'javac', 'javah', 'rmic',
+        # TeX
+        'dvipdf', 'dvips', 'gs',
+        'tex', 'latex', 'pdflatex', 'pdftex',
+        # Archivers
+        'tar', 'zip',
+        # File builders (text)
+        'textfile',
+    ]
+
+
 def tool_list(platform, env):
     other_plat_tools = []
     # XXX this logic about what tool to prefer on which platform
     #     should be moved into either the platform files or
     #     the tool files themselves.
-    # The search orders here are described in the man page.  If you
-    # change these search orders, update the man page as well.
-    if str(platform) == 'win32':
-        "prefer Microsoft tools on Windows"
-        linkers = ['mslink', 'gnulink', 'ilink', 'linkloc', 'ilink32']
-        c_compilers = ['msvc', 'mingw', 'gcc', 'intelc', 'icl', 'icc', 'cc', 'bcc32']
-        cxx_compilers = ['msvc', 'intelc', 'icc', 'g++', 'cxx', 'bcc32']
-        assemblers = ['masm', 'nasm', 'gas', '386asm']
-        fortran_compilers = ['gfortran', 'g77', 'ifl', 'cvf', 'f95', 'f90', 'fortran']
-        ars = ['mslib', 'ar', 'tlib']
-        other_plat_tools = ['msvs', 'midl']
-    elif str(platform) == 'os2':
-        "prefer IBM tools on OS/2"
-        linkers = ['ilink', 'gnulink', ]  # 'mslink']
-        c_compilers = ['icc', 'gcc', ]  # 'msvc', 'cc']
-        cxx_compilers = ['icc', 'g++', ]  # 'msvc', 'cxx']
-        assemblers = ['nasm', ]  # 'masm', 'gas']
-        fortran_compilers = ['ifl', 'g77']
-        ars = ['ar', ]  # 'mslib']
-    elif str(platform) == 'irix':
-        "prefer MIPSPro on IRIX"
-        linkers = ['sgilink', 'gnulink']
-        c_compilers = ['sgicc', 'gcc', 'cc']
-        cxx_compilers = ['sgicxx', 'g++', 'cxx']
-        assemblers = ['as', 'gas']
-        fortran_compilers = ['f95', 'f90', 'f77', 'g77', 'fortran']
-        ars = ['sgiar']
-    elif str(platform) == 'sunos':
-        "prefer Forte tools on SunOS"
-        linkers = ['sunlink', 'gnulink']
-        c_compilers = ['suncc', 'gcc', 'cc']
-        cxx_compilers = ['suncxx', 'g++', 'cxx']
-        assemblers = ['as', 'gas']
-        fortran_compilers = ['sunf95', 'sunf90', 'sunf77', 'f95', 'f90', 'f77',
-                             'gfortran', 'g77', 'fortran']
-        ars = ['sunar']
-    elif str(platform) == 'hpux':
-        "prefer aCC tools on HP-UX"
-        linkers = ['hplink', 'gnulink']
-        c_compilers = ['hpcc', 'gcc', 'cc']
-        cxx_compilers = ['hpcxx', 'g++', 'cxx']
-        assemblers = ['as', 'gas']
-        fortran_compilers = ['f95', 'f90', 'f77', 'g77', 'fortran']
-        ars = ['ar']
-    elif str(platform) == 'aix':
-        "prefer AIX Visual Age tools on AIX"
-        linkers = ['aixlink', 'gnulink']
-        c_compilers = ['aixcc', 'gcc', 'cc']
-        cxx_compilers = ['aixcxx', 'g++', 'cxx']
-        assemblers = ['as', 'gas']
-        fortran_compilers = ['f95', 'f90', 'aixf77', 'g77', 'fortran']
-        ars = ['ar']
-    elif str(platform) == 'darwin':
-        "prefer GNU tools on Mac OS X, except for some linkers and IBM tools"
-        linkers = ['applelink', 'gnulink']
-        c_compilers = ['gcc', 'cc']
-        cxx_compilers = ['g++', 'cxx']
-        assemblers = ['as']
-        fortran_compilers = ['gfortran', 'f95', 'f90', 'g77']
-        ars = ['ar']
-    elif str(platform) == 'cygwin':
-        "prefer GNU tools on Cygwin, except for a platform-specific linker"
-        linkers = ['cyglink', 'mslink', 'ilink']
-        c_compilers = ['gcc', 'msvc', 'intelc', 'icc', 'cc']
-        cxx_compilers = ['g++', 'msvc', 'intelc', 'icc', 'cxx']
-        assemblers = ['gas', 'nasm', 'masm']
-        fortran_compilers = ['gfortran', 'g77', 'ifort', 'ifl', 'f95', 'f90', 'f77']
-        ars = ['ar', 'mslib']
-    else:
-        "prefer GNU tools on all other platforms"
-        linkers = ['gnulink', 'ilink']
-        c_compilers = ['gcc', 'intelc', 'icc', 'cc']
-        cxx_compilers = ['g++', 'intelc', 'icc', 'cxx']
-        assemblers = ['gas', 'nasm', 'masm']
-        fortran_compilers = ['gfortran', 'g77', 'ifort', 'ifl', 'f95', 'f90', 'f77']
-        ars = ['ar', ]
 
-    if not str(platform) == 'win32':
-        other_plat_tools += ['m4', 'rpm']
+    platform_str = str(platform)
+
+    plat_tools = all_plat_tools.get(platform_str, all_plat_tools['default'])
+
+    c_compilers = plat_tools.c_compilers
+    cxx_compilers = plat_tools.cxx_compilers
+    linkers = plat_tools.linkers
+    assemblers = plat_tools.assemblers
+    fortran_compilers = plat_tools.fortran_compilers
+    ars = plat_tools.ars
+    other_plat_tools = plat_tools.other_plat_tools
 
     c_compiler = FindTool(c_compilers, env) or c_compilers[0]
 
@@ -1291,28 +1350,9 @@ def tool_list(platform, env):
         fortran_compiler = FindTool(fortran_compilers, env) or fortran_compilers[0]
         ar = FindTool(ars, env) or ars[0]
 
-    d_compilers = ['dmd', 'ldc', 'gdc']
     d_compiler = FindTool(d_compilers, env) or d_compilers[0]
 
-    other_tools = FindAllTools(other_plat_tools + [
-        # TODO: merge 'install' into 'filesystem' and
-        # make 'filesystem' the default
-        'filesystem',
-        'wix',  # 'midl', 'msvs',
-        # Parser generators
-        'lex', 'yacc',
-        # Foreign function interface
-        'rpcgen', 'swig',
-        # Java
-        'jar', 'javac', 'javah', 'rmic',
-        # TeX
-        'dvipdf', 'dvips', 'gs',
-        'tex', 'latex', 'pdflatex', 'pdftex',
-        # Archivers
-        'tar', 'zip',
-        # File builders (text)
-        'textfile',
-    ], env)
+    other_tools = FindAllTools(other_plat_tools + extra_tools, env)
 
     tools = ([linker, c_compiler, cxx_compiler,
               fortran_compiler, assembler, ar, d_compiler]
