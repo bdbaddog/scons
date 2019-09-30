@@ -428,7 +428,7 @@ class Executor(object, with_metaclass(NoSlotsPyPy)):
         for s in self.get_all_sources():
             if s.missing():
                 msg = "Source `%s' not found, needed by target `%s'."
-                raise SCons.Errors.StopError(msg % (s, self.batches[0].targets[0]))
+                raise SCons.Errors.StopError(msg % ((s,id(s)), self.batches[0].targets[0]))
 
     def add_pre_action(self, action):
         self.pre_actions.append(action)

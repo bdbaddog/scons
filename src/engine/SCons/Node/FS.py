@@ -576,6 +576,8 @@ class Base(SCons.Node.Node):
         directory, and indicate that this node should use
         signatures."""
 
+
+
         if SCons.Debug.track_instances: logInstanceCreation(self, 'Node.FS.Base')
         SCons.Node.Node.__init__(self)
 
@@ -603,6 +605,11 @@ class Base(SCons.Node.Node):
         self._func_get_contents = 0
         self._func_target_from_source = 1
         self.store_info = 1
+
+        print("Creating:%-40s id:%s dir:%s"%(name, id(self), directory))
+        if name =='gtest.cc':
+            print("YES")
+
 
     def str_for_display(self):
         return '"' + self.__str__() + '"'

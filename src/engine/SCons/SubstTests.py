@@ -961,6 +961,13 @@ class scons_subst_list_TestCase(SubstTestCase):
         subst_list_cases = self.subst_list_cases[:]
         gvars = env.Dictionary()
 
+
+        test = '${LIST}'
+        r = scons_subst_list(test, env, mode=SUBST_SIG, gvars=gvars)
+        answer = [['This', 'is', 'test']]
+        assert r == answer, 'This should be  %s not :%s' % (answer, r)
+
+
         r = scons_subst_list("$TARGET $SOURCES", env, mode=SUBST_RAW, gvars=gvars)
         assert r == [[]], r
 

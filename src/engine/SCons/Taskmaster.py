@@ -192,7 +192,13 @@ class Task(object):
         # target t.prepare() methods check that each target's explicit
         # or implicit dependencies exists, and also initialize the
         # .sconsign info.
-        executor = self.targets[0].get_executor()
+        try:
+            executor = self.targets[0].srcnode().get_executor()
+        except AttributeError:
+            # Not File node
+            executor = self.targets[0].get_executor()
+
+
         if executor is None:
             return
         executor.prepare()
@@ -402,13 +408,20 @@ class Task(object):
         if T: T.write(self.trace_message(u'Task.make_ready_current()',
                                          self.node))
 
+
         self.out_of_date = []
         needs_executing = False
         for t in self.targets:
             try:
                 t.disambiguate().make_ready()
-                is_up_to_date = not t.has_builder() or \
-                                (not t.always_build and t.is_up_to_date())
+                try:
+                    is_up_to_date = not t.srcnode().has_builder() or \
+                                    (not t.always_build and t.is_up_to_date())
+                except AttributeError:
+                    # Not a file node
+                    is_up_to_date = not t.has_builder() or \
+                                    (not t.always_build and t.is_up_to_date())
+
             except EnvironmentError as e:
                 raise SCons.Errors.BuildError(node=t, errstr=e.strerror, filename=e.filename)
 
@@ -971,7 +984,11 @@ class Taskmaster(object):
         if node is None:
             return None
 
-        executor = node.get_executor()
+        try:
+            executor = node.srcnode().get_executor()
+        except AttributeError:
+            executor = node.get_executor()
+
         if executor is None:
             return None
 
