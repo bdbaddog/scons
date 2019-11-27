@@ -394,11 +394,14 @@ _list_remove = [ _rm_list, None, _remove_list ]
 #
 _dollar_exps_str = r'\$[\$\(\)]|\$[_a-zA-Z][\.\w]*|\${[^}]*}'
 _dollar_exps = re.compile(r'(%s)' % _dollar_exps_str)
+_dollar_exps_cache = {}
 _separate_args = re.compile(r'(%s|\s+|[^\s\$]+|\$)' % _dollar_exps_str)
+_separate_args_cache = {}
 
 # This regular expression is used to replace strings of multiple white
 # space characters in the string result from the scons_subst() function.
 _space_sep = re.compile(r'[\t ]+(?![^{]*})')
+
 
 def scons_subst(strSubst, env, mode=SUBST_RAW, target=None, source=None, gvars={}, lvars={}, conv=None):
     """Expand a string or list containing construction variable
@@ -520,24 +523,57 @@ def scons_subst(strSubst, env, mode=SUBST_RAW, target=None, source=None, gvars={
             """
             if is_String(args) and not isinstance(args, CmdStringHolder):
                 args = str(args)        # In case it's a UserString.
+                def sub_match(match):
+                    return self.conv(self.expand(match.group(1), lvars))
+                result = _dollar_exps.sub(sub_match, args)
+                return result
+            else:
+                return self.expand(args, lvars)
+
+        def substitute_new(self, args, lvars):
+            """Substitute expansions in an argument or list of arguments.
+
+            This serves as a wrapper for splitting up a string into
+            separate tokens.
+            """
+            if is_String(args) and not isinstance(args, CmdStringHolder):
+                args = str(args)        # In case it's a UserString.
+                # print("String:%s"%args)
+                # try:
+                #     def sub_match(match):
+                #         print("MG1: %s"%match.group(1))
+                #         return self.conv(self.expand(match.group(1), lvars))
+                #
+                #     def sub_match1(match):
+                #         return self.conv(self.expand(match, lvars))
+                #
+                #     try:
+                #         parts = _dollar_exps_cache[args]
+                #     except KeyError:
+                #         parts = _dollar_exps.findall(args)
+                #
+                #     result = " ".join([sub_match1(m) for m in parts])
+                #
+                #     result_old = _dollar_exps.sub(sub_match, args)
+                #     assert result == result_old, "Old:%s New:%s (parts:%s)"%(result_old, result, parts)
+                # except TypeError:
+                # If the internal conversion routine doesn't return
+                # strings (it could be overridden to return Nodes, for
+                # example), then the 1.5.2 re module will throw this
+                # exception.  Back off to a slower, general-purpose
+                # algorithm that works for all data types.
                 try:
-                    def sub_match(match):
-                        return self.conv(self.expand(match.group(1), lvars))
-                    result = _dollar_exps.sub(sub_match, args)
-                except TypeError:
-                    # If the internal conversion routine doesn't return
-                    # strings (it could be overridden to return Nodes, for
-                    # example), then the 1.5.2 re module will throw this
-                    # exception.  Back off to a slower, general-purpose
-                    # algorithm that works for all data types.
-                    args = _separate_args.findall(args)
-                    result = []
-                    for a in args:
-                        result.append(self.conv(self.expand(a, lvars)))
-                    if len(result) == 1:
-                        result = result[0]
-                    else:
-                        result = ''.join(map(str, result))
+                    args = _separate_args_cache[args]
+                except KeyError:
+                    _separate_args_cache[args] = args = _separate_args.findall(args)
+
+                result = []
+                for a in args:
+                    result.append(self.conv(self.expand(a, lvars)))
+                if len(result) == 1:
+                    result = result[0]
+                else:
+                    result = ''.join(map(str, result))
                 return result
             else:
                 return self.expand(args, lvars)
