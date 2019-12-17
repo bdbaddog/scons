@@ -585,12 +585,19 @@ class SConsEnvironment(SCons.Environment.Base):
             return x
         ls = list(map(subst_element, ls))
         subst_kw = {}
+        bad_keyword_args = []
         for key, val in kw.items():
+            if key not in ('dirs','name','exports','variant_dir','duplicate','must_exist'):
+                bad_keyword_args.append(key)
+                continue
             if is_String(val):
                 val = self.subst(val)
             elif SCons.Util.is_List(val):
                 val = [self.subst(v) if is_String(v) else v for v in val]
             subst_kw[key] = val
+
+        if bad_keyword_args:
+            raise TypeError("SConscript() got an unexpected keyword argument '%s'"%",".join(bad_keyword_args))
 
         files, exports = self._get_SConscript_filenames(ls, subst_kw)
         subst_kw['exports'] = exports

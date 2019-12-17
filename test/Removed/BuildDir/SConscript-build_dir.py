@@ -31,6 +31,7 @@ Verify that specifying a build_dir argument to SConscript no longer works.
 import TestSCons
 
 test = TestSCons.TestSCons(match = TestSCons.match_exact)
+# test.skip_test("SConscript doesn't reject unknown arguments\n")
 
 test.file_fixture('SConstruct.kwarg', 'SConstruct')
 test.subdir('src')
@@ -42,8 +43,12 @@ expect = """\
 TypeError: SConscript() got an unexpected keyword argument 'build_dir':
   File "{}", line 1:
     SConscript('src/SConscript', build_dir='build')
+.*
+.*
+.*
+.*
 """.format(test.workpath('SConstruct'))
-test.run(arguments='-Q -s', status=2, stderr=expect)
+test.run(arguments='-Q -s', status=2, stderr=expect) #, match=TestSCons.match_exact)
 
 test.pass_test()
 
