@@ -638,36 +638,39 @@ yet have any results in the cache.</para>
   </listitem>
   </varlistentry>
   <varlistentry>
-  <term>-C<emphasis> directory</emphasis>, --directory=<emphasis>directory</emphasis></term>
+  <term>-C <replaceable>directory</replaceable>, --directory=<replaceable>directory</replaceable></term>
   <listitem>
-<para>Change to the specified
-<emphasis>directory</emphasis>
-before searching for the
-<emphasis>SConstruct</emphasis>,
-<emphasis>Sconstruct</emphasis>,
-<emphasis>sconstruct</emphasis>,
-<emphasis>SConstruct.py</emphasis>
-<emphasis>Sconstruct.py</emphasis>
+<para>Run as if &scons; was started in
+<replaceable>directory</replaceable>
+instead of the current working directory.
+That is, change directory before searching for the
+&SConstruct;,
+&Sconstruct;,
+&sconstruct;,
+&SConstruct.py;,
+&Sconstruct.py;
 or
-<emphasis>sconstruct.py</emphasis>
-file, or doing anything
-else.  Multiple
+&sconstruct.py;
+file, or doing anything else.
+When multiple
 <option>-C</option>
-options are interpreted
-relative to the previous one, and the right-most
-<option>-C</option>
-option wins. (This option is nearly
-equivalent to
-<option>-f directory/SConstruct</option>,
-except that it will search for
-<emphasis>SConstruct</emphasis>,
-<emphasis>Sconstruct</emphasis>,
-<emphasis>sconstruct</emphasis>,
-<emphasis>SConstruct.py</emphasis>
-<emphasis>Sconstruct.py</emphasis>
-or
-<emphasis>sconstruct.py</emphasis>
-in the specified directory.)</para>
+options are given, each subsequent non-absolute
+<option>-C</option> <replaceable>directory</replaceable>
+is interpreted relative to the preceding one.
+This option is similar to using
+<option>-f <replaceable>directory</replaceable>/SConstruct</option>,
+but <option>-f</option> does not search for any of the
+predefined &SConstruct; names
+in the specified directory.
+See also options
+<option>-u</option>,
+<option>-U</option>
+and
+<option>-D</option>
+to change the &SConstruct; search behavior when this option is used.
+</para>
+  </listitem>
+  </varlistentry>
 
 <!--  .TP -->
 <!--  \-d -->
@@ -675,8 +678,6 @@ in the specified directory.)</para>
 <!--  figuring out why a specific file is being rebuilt, as well as -->
 <!--  general debugging of the build process. -->
 
-  </listitem>
-  </varlistentry>
   <varlistentry>
   <term>-D</term>
   <listitem>
@@ -686,19 +687,32 @@ option except for the way default targets are handled.
 When this option is used and no targets are specified on the command line,
 all default targets are built, whether or not they are below the current
 directory.</para>
-
   </listitem>
   </varlistentry>
+
   <varlistentry>
-  <term>--debug=<emphasis>type</emphasis></term>
+  <term>--debug=<replaceable>type</replaceable>[<replaceable>,type</replaceable>...]</term>
   <listitem>
 <para>Debug the build process.
-<emphasis>type[,type...]</emphasis>
-specifies what type of debugging. Multiple types may be specified,
-separated by commas. The following types are valid:</para>
-
+<emphasis>type</emphasis>
+specifies the kind of debugging info to emit.
+Multiple types may be specified, separated by commas.
+The following entries show the recognized types:</para>
   </listitem>
   </varlistentry>
+
+  <varlistentry>
+  <term>--debug=action-timestamps</term>
+  <listitem>
+<para>Prints additional time profiling information. For
+each command, shows the absolute start and end times.
+This may be useful in debugging parallel builds.
+Implies the <option>--debug=time</option> option.
+</para>
+<para>Since &scons; 3.1.</para>
+  </listitem>
+  </varlistentry>
+
   <varlistentry>
   <term>--debug=count</term>
   <listitem>
@@ -723,17 +737,6 @@ files).</para>
 <para>Print a line for each unlink/relink (or copy) of a variant file from
 its source file.  Includes debugging info for unlinking stale variant
 files, as well as unlinking old targets before building them.</para>
-
-  </listitem>
-  </varlistentry>
-  <varlistentry>
-  <term>--debug=dtree</term>
-  <listitem>
-<para>A synonym for the newer
-<option>--tree=derived</option>
-option.
-This will be deprecated in some future release
-and ultimately removed.</para>
 
   </listitem>
   </varlistentry>
@@ -789,13 +792,6 @@ instead of recomputing them each time they're needed.</para>
 <para>Prints how much memory SCons uses
 before and after reading the SConscript files
 and before and after building targets.</para>
-
-  </listitem>
-  </varlistentry>
-  <varlistentry>
-  <term>--debug=nomemoizer</term>
-  <listitem>
-<para>A deprecated option preserved for backwards compatibility.</para>
 
   </listitem>
   </varlistentry>
@@ -856,17 +852,6 @@ when encountering an otherwise unexplained error.</para>
   </listitem>
   </varlistentry>
   <varlistentry>
-  <term>--debug=stree</term>
-  <listitem>
-<para>A synonym for the newer
-<option>--tree=all,status</option>
-option.
-This will be deprecated in some future release
-and ultimately removed.</para>
-
-  </listitem>
-  </varlistentry>
-  <varlistentry>
   <term>--debug=time</term>
   <listitem>
 <para>Prints various time profiling information:</para>
@@ -919,20 +904,9 @@ since multiple build commands and
 intervening SCons processing
 should take place in parallel.)
 </para>
-
   </listitem>
   </varlistentry>
-  <varlistentry>
-  <term>--debug=tree</term>
-  <listitem>
-<para>A synonym for the newer
-<option>--tree=all</option>
-option.
-This will be deprecated in some future release
-and ultimately removed.</para>
 
-  </listitem>
-  </varlistentry>
   <varlistentry>
   <term>--diskcheck=<emphasis>types</emphasis></term>
   <listitem>
@@ -1120,6 +1094,18 @@ This implies
 
   </listitem>
   </varlistentry>
+
+  <varlistentry>
+  <term>--install-sandbox=<replaceable>path</replaceable></term>
+  <listitem>
+<para>
+When using the &Install; functions, prepend <replaceable>path</replaceable>
+to the installation paths such that all installed files will be placed
+underneath <replaceable>path</replaceable>.
+</para>
+  </listitem>
+  </varlistentry>
+
   <varlistentry>
   <term>--interactive</term>
   <listitem>
@@ -1810,41 +1796,6 @@ Warnings for some specific deprecated features
 may be enabled or disabled individually;
 see below.</para>
 
-  <blockquote>
-    <variablelist>
-      <varlistentry>
-      <term>--warn=deprecated-copy, --warn=no-deprecated-copy</term>
-      <listitem>
-<para>Enables or disables warnings about use of the deprecated
-<emphasis role="bold">env.Copy()</emphasis>
-method.</para>
-
-      </listitem>
-      </varlistentry>
-      <varlistentry>
-      <term>--warn=deprecated-source-signatures, --warn=no-deprecated-source-signatures</term>
-      <listitem>
-<para>Enables or disables warnings about use of the deprecated
-<emphasis role="bold">SourceSignatures()</emphasis>
-function or
-<emphasis role="bold">env.SourceSignatures()</emphasis>
-method.</para>
-
-      </listitem>
-      </varlistentry>
-      <varlistentry>
-      <term>--warn=deprecated-target-signatures, --warn=no-deprecated-target-signatures</term>
-      <listitem>
-<para>Enables or disables warnings about use of the deprecated
-<emphasis role="bold">TargetSignatures()</emphasis>
-function or
-<emphasis role="bold">env.TargetSignatures()</emphasis>
-method.</para>
-      </listitem>
-      </varlistentry>
-    </variablelist>
-    </blockquote>
-
   </listitem>
   </varlistentry>
   <varlistentry>
@@ -2293,10 +2244,10 @@ env.SomeTool(targets, sources)
 
 <refsect2 id='builder_methods'><title>Builder Methods</title>
 
-<para>You tell <program>scons</program> what to build
+<para>You tell <command>scons</command> what to build
 by calling Builders, functions which know to take a
 particular action when given files of a particular type
-to produce a particular result type. <program>scons</program>
+to produce a particular result type. <command>scons</command>
 defines a number of builders, and you can also write your own.
 Builders are attached to a &consenv; as methods,
 and the available builder methods are listed as
@@ -4600,7 +4551,7 @@ incl = Dir('include')
 f = incl.File('header.h')
 
 # Get a Node for a subdirectory within a directory
-dist = Dir('project-3.2.1)
+dist = Dir('project-3.2.1')
 src = dist.Dir('src')
 
 # Get a Node for a file in the same directory
@@ -4975,7 +4926,8 @@ the same target file(s). The default is 0, which means the builder
 can not be called multiple times for the same target file(s). Calling a
 builder multiple times for the same target simply adds additional source
 files to the target; it is not allowed to change the environment associated
-with the target, specify addition environment overrides, or associate a different
+with the target, specify additional environment overrides,
+or associate a different
 builder with the target.</para>
 
   </listitem>
@@ -5735,11 +5687,11 @@ which can be octal or string, similar to the bash command.
 Examples:</para>
 
 <literallayout class="monospaced">
-Execute(Chmod('file', 0755))
+Execute(Chmod('file', 0o755))
 
 env.Command('foo.out', 'foo.in',
             [Copy('$TARGET', '$SOURCE'),
-             Chmod('$TARGET', 0755)])
+             Chmod('$TARGET', 0o755)])
 
 Execute(Chmod('file', "ugo+w"))
 
@@ -7073,7 +7025,7 @@ value each time we call the SConscript function.</para>
 <programlisting>
 SConstruct:
 
-    env = Environment(LIBPATH = ['#libA', '#libB'])
+    env = Environment(LIBPATH=['#libA', '#libB'])
     Export('env')
     SConscript('libA/SConscript')
     SConscript('libB/SConscript')
@@ -7092,7 +7044,7 @@ libB/SConscript:
 Main/SConscript:
 
     Import('env')
-    e = env.Copy(LIBS = ['a', 'b'])
+    e = env.Clone(LIBS=['a', 'b'])
     e.Program('foo', Split('m1.c m2.c m3.c'))
 </programlisting>
 
@@ -7217,22 +7169,62 @@ env.Program('MyApp', ['Foo.cpp', 'Bar.cpp'])
 </refsect1>
 
 <refsect1 id='environment'><title>ENVIRONMENT</title>
+
+<para>In general, &scons; is not controlled by environment
+variables set in the shell used to invoke it, leaving it
+up to the SConscript file author to import those if desired.
+However the following variables are imported by
+&scons; itself if set:
+</para>
+
 <variablelist>
   <varlistentry>
-  <term>SCONS_LIB_DIR</term>
-  <listitem>
-<para>Specifies the directory that contains the SCons Python module directory
-(e.g. /home/aroach/scons-src-0.01/src/engine).</para>
-
-  </listitem>
+    <term>SCONS_LIB_DIR</term>
+    <listitem>
+<para>Specifies the directory that contains the &scons;
+Python module directory (for example,
+<filename>/home/aroach/scons-src-0.01/src/engine</filename>).</para>
+    </listitem>
   </varlistentry>
-  <varlistentry>
-  <term>SCONSFLAGS</term>
-  <listitem>
-<para>A string of options that will be used by scons in addition to those passed
-on the command line.</para>
 
-  </listitem>
+  <varlistentry>
+    <term>SCONSFLAGS</term>
+    <listitem>
+<para>A string of options that will be used by &scons;
+in addition to those passed on the command line.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>SCONS_CACHE_MSVC_CONFIG</term>
+    <listitem>
+<para>(Windows only). If set, save the shell environment variables
+generated when setting up the Microsoft Visual C++ compiler
+(and/or Build Tools) to a file to give these settings, 
+which are expensive to generate, persistence
+across &scons; invocations.
+Use of this option is primarily intended to aid performance
+in tightly controlled Continuous Integration setups.</para>
+
+<para>If set to a True-like value (<literal>"1"</literal>,
+<literal>"true"</literal> or
+<literal>"True"</literal>) will cache to a file named
+<filename>.scons_msvc_cache</filename> in the user's home directory.
+If set to a pathname, will use that pathname for the cache.</para>
+
+<para>Note: use this cache with caution as it
+might be somewhat fragile: while each major toolset version
+(e.g. Visual Studio 2017 vs 2019) and architecture pair will get separate
+cache entries, if toolset updates cause a change
+to settings within a given release series, &scons; will not
+detect the change and will reuse old settings.
+Remove the cache file in case of problems with this.
+&scons; will ignore failures reading or writing the file
+and will silently revert to non-cached behavior in such cases.</para>
+
+<para>Since &scons; 3.1.</para>
+
+    </listitem>
   </varlistentry>
 </variablelist>
 </refsect1>
@@ -7248,8 +7240,9 @@ source code.</para>
 </refsect1>
 
 <refsect1 id='authors'><title>AUTHORS</title>
-<para>Originally: Steven Knight &lt;knight@baldmt.com&gt; and Anthony Roach &lt;aroach@electriceyeball.com&gt;
-Since 2010: The SCons Development Team &lt;scons-dev@scons.org&gt;
+<para>Originally: Steven Knight <email>knight@baldmt.com</email>
+and Anthony Roach <email>aroach@electriceyeball.com</email>.
+Since 2010: The SCons Development Team <email>scons-dev@scons.org</email>.
 </para>
 </refsect1>
 </refentry>

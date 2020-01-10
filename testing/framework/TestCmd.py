@@ -310,6 +310,7 @@ import types
 IS_PY3 = sys.version_info[0] == 3
 IS_WINDOWS = sys.platform == 'win32'
 IS_64_BIT = sys.maxsize > 2**32
+IS_PYPY = hasattr(sys, 'pypy_translation_info')
 
 class null(object):
     pass
@@ -667,7 +668,7 @@ def diff_re(a, b, fromfile='', tofile='',
 
 if os.name == 'posix':
     def escape(arg):
-        "escape shell special characters"
+        """escape shell special characters"""
         slash = '\\'
         special = '"$'
         arg = arg.replace(slash, slash + slash)
@@ -1528,7 +1529,7 @@ class TestCmd(object):
         # TODO: Run full tests on both platforms and see if this fixes failures
         # It seems that py3.6 still sets text mode if you set encoding.
         elif sys.version_info[0] == 3:  # TODO and sys.version_info[1] < 6:
-            stream = stream.decode('utf-8')
+            stream = stream.decode('utf-8', errors='replace')
             stream = stream.replace('\r\n', '\n')
         elif sys.version_info[0] == 2:
             stream = stream.replace('\r\n', '\n')
@@ -1805,7 +1806,7 @@ class TestCmd(object):
         path name.  If the path is a null string (''), a unique
         directory name is created.
         """
-        if (path != None):
+        if path is not None:
             if path == '':
                 path = None
             path = self.tempdir(path)

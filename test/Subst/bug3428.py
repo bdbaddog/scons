@@ -25,30 +25,26 @@
 __revision__ = "__FILE__ __REVISION__ __DATE__ __DEVELOPER__"
 
 """
-Test calling the (deprecated) --debug=nomemoizer option.
+Verify that CmdStringHolder doesn't trip in Subst on doing
+a string-only operation that does not work on UserString class.
+Issue: https://github.com/SCons/scons/issues/3428
 """
 
 import TestSCons
 
-test = TestSCons.TestSCons(match = TestSCons.match_re)
+test = TestSCons.TestSCons(match = TestSCons.match_re_dotall)
 
-test.write('SConstruct', """
-def cat(target, source, env):
-    with open(str(target[0]), 'wb') as ofp, open(str(source[0]), 'rb') as ifp:
-        ofp.write(ifp.read())
-env = Environment(BUILDERS={'Cat':Builder(action=Action(cat))})
-env.Cat('file.out', 'file.in')
+
+test.write('SConstruct', """\
+env = Environment()
+env.Append(LIBPATH=["path1/sub1","path1/sub2"])
+lst = env.Flatten(env.subst_list("$LIBPATH"))
+for i in lst:
+    env.Dir(i)
 """)
 
-test.write('file.in', "file.in\n")
+test.run(status=0)
 
-expect = """
-scons: warning: The --debug=nomemoizer option is deprecated and has no effect.
-""" + TestSCons.file_expr
-
-test.run(arguments = "--debug=nomemoizer", stderr = expect)
-
-test.must_match('file.out', "file.in\n")
 
 test.pass_test()
 

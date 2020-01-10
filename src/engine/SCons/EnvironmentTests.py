@@ -726,7 +726,7 @@ sys.exit(0)
         assert r == 'replace_func2', r
 
     def test_Override(self):
-        "Test overriding construction variables"
+        """Test overriding construction variables"""
         env = SubstitutionEnvironment(ONE=1, TWO=2, THREE=3, FOUR=4)
         assert env['ONE'] == 1, env['ONE']
         assert env['TWO'] == 2, env['TWO']
@@ -804,6 +804,7 @@ sys.exit(0)
             "-iquote /usr/include/foo1 " + \
             "-isystem /usr/include/foo2 " + \
             "-idirafter /usr/include/foo3 " + \
+            "-imacros /usr/include/foo4 " + \
             "+DD64 " + \
             "-DFOO -DBAR=value -D BAZ "
 
@@ -818,6 +819,7 @@ sys.exit(0)
                                 ('-iquote', '/usr/include/foo1'),
                                 ('-isystem', '/usr/include/foo2'),
                                 ('-idirafter', '/usr/include/foo3'),
+                                ('-imacros', env.fs.File('/usr/include/foo4')),
                                 '+DD64'], repr(d['CCFLAGS'])
         assert d['CXXFLAGS'] == ['-std=c++0x'], repr(d['CXXFLAGS'])
         assert d['CPPDEFINES'] == ['FOO', ['BAR', 'value'], 'BAZ'], d['CPPDEFINES']
@@ -1406,7 +1408,7 @@ def exists(env):
         assert env['XYZ'] == 'ddd', env
 
     def test_concat(self):
-        "Test _concat()"
+        """Test _concat()"""
         e1 = self.TestEnvironment(PRE='pre', SUF='suf', STR='a b', LIST=['a', 'b'])
         s = e1.subst
         x = s("${_concat('', '', '', __env__)}")
@@ -1421,7 +1423,7 @@ def exists(env):
         assert x == 'preasuf prebsuf', x
 
     def test_concat_nested(self):
-        "Test _concat() on a nested substitution strings."
+        """Test _concat() on a nested substitution strings."""
         e = self.TestEnvironment(PRE='pre', SUF='suf',
                                  L1=['a', 'b'],
                                  L2=['c', 'd'],
@@ -1874,18 +1876,6 @@ def generate(env):
         assert ('BUILDERS' in env) is False
         env2 = env.Clone()
 
-    def test_Copy(self):
-        """Test copying using the old env.Copy() method"""
-        env1 = self.TestEnvironment(XXX = 'x', YYY = 'y')
-        env2 = env1.Copy()
-        env1copy = env1.Copy()
-        assert env1copy == env1copy
-        assert env2 == env2
-        env2.Replace(YYY = 'yyy')
-        assert env2 == env2
-        assert env1 != env2
-        assert env1 == env1copy
-
     def test_Detect(self):
         """Test Detect()ing tools"""
         test = TestCmd.TestCmd(workdir = '')
@@ -1966,7 +1956,7 @@ def generate(env):
         assert 'XXX' not in env.Dictionary()
 
     def test_FindIxes(self):
-        "Test FindIxes()"
+        """Test FindIxes()"""
         env = self.TestEnvironment(LIBPREFIX='lib',
                           LIBSUFFIX='.a',
                           SHLIBPREFIX='lib',
@@ -2408,7 +2398,7 @@ f5: \
         assert hasattr(env3, 'b2'), "b2 was not set"
 
     def test_ReplaceIxes(self):
-        "Test ReplaceIxes()"
+        """Test ReplaceIxes()"""
         env = self.TestEnvironment(LIBPREFIX='lib',
                           LIBSUFFIX='.a',
                           SHLIBPREFIX='lib',
@@ -3265,63 +3255,6 @@ def generate(env):
         assert ggg.side_effects == [s], ggg.side_effects
         assert ccc.side_effects == [s], ccc.side_effects
 
-    def test_SourceCode(self):
-        """Test the SourceCode() method."""
-        env = self.TestEnvironment(FOO='mmm', BAR='nnn')
-        e = env.SourceCode('foo', None)[0]
-        assert e.get_internal_path() == 'foo'
-        s = e.src_builder()
-        assert s is None, s
-
-        b = Builder()
-        e = env.SourceCode(e, b)[0]
-        assert e.get_internal_path() == 'foo'
-        s = e.src_builder()
-        assert s is b, s
-
-        e = env.SourceCode('$BAR$FOO', None)[0]
-        assert e.get_internal_path() == 'nnnmmm'
-        s = e.src_builder()
-        assert s is None, s
-
-    def test_SourceSignatures(self):
-        """Test the SourceSignatures() method"""
-        import SCons.Errors
-
-        env = self.TestEnvironment(M = 'MD5', T = 'timestamp')
-
-        exc_caught = None
-        try:
-            env.SourceSignatures('invalid_type')
-        except SCons.Errors.UserError:
-            exc_caught = 1
-        assert exc_caught, "did not catch expected UserError"
-
-        env.SourceSignatures('MD5')
-        assert env.src_sig_type == 'MD5', env.src_sig_type
-
-        env.SourceSignatures('$M')
-        assert env.src_sig_type == 'MD5', env.src_sig_type
-
-        env.SourceSignatures('timestamp')
-        assert env.src_sig_type == 'timestamp', env.src_sig_type
-
-        env.SourceSignatures('$T')
-        assert env.src_sig_type == 'timestamp', env.src_sig_type
-
-        try:
-            import SCons.Util
-            save_md5 = SCons.Util.md5
-            SCons.Util.md5 = None
-            try:
-                env.SourceSignatures('MD5')
-            except SCons.Errors.UserError:
-                pass
-            else:
-                self.fail('Did not catch expected UserError')
-        finally:
-            SCons.Util.md5 = save_md5
-
     def test_Split(self):
         """Test the Split() method"""
         env = self.TestEnvironment(FOO = 'fff', BAR = 'bbb')
@@ -3338,56 +3271,6 @@ def generate(env):
         s = env.Split("$FOO$BAR")
         assert s == ["fffbbb"], s
 
-    def test_TargetSignatures(self):
-        """Test the TargetSignatures() method"""
-        import SCons.Errors
-
-        env = self.TestEnvironment(B='build', C='content')
-
-        exc_caught = None
-        try:
-            env.TargetSignatures('invalid_type')
-        except SCons.Errors.UserError:
-            exc_caught = 1
-        assert exc_caught, "did not catch expected UserError"
-        assert not hasattr(env, '_build_signature')
-
-        env.TargetSignatures('build')
-        assert env.tgt_sig_type == 'build', env.tgt_sig_type
-
-        env.TargetSignatures('$B')
-        assert env.tgt_sig_type == 'build', env.tgt_sig_type
-
-        env.TargetSignatures('content')
-        assert env.tgt_sig_type == 'content', env.tgt_sig_type
-
-        env.TargetSignatures('$C')
-        assert env.tgt_sig_type == 'content', env.tgt_sig_type
-
-        env.TargetSignatures('MD5')
-        assert env.tgt_sig_type == 'MD5', env.tgt_sig_type
-
-        env.TargetSignatures('timestamp')
-        assert env.tgt_sig_type == 'timestamp', env.tgt_sig_type
-
-        try:
-            import SCons.Util
-            save_md5 = SCons.Util.md5
-            SCons.Util.md5 = None
-            try:
-                env.TargetSignatures('MD5')
-            except SCons.Errors.UserError:
-                pass
-            else:
-                self.fail('Did not catch expected UserError')
-            try:
-                env.TargetSignatures('content')
-            except SCons.Errors.UserError:
-                pass
-            else:
-                self.fail('Did not catch expected UserError')
-        finally:
-            SCons.Util.md5 = save_md5
 
     def test_Value(self):
         """Test creating a Value() object
@@ -3401,12 +3284,10 @@ def generate(env):
         assert v2.value == value2, v2.value
         assert v2.value is value2, v2.value
 
-        assert not v1 is v2
-        assert v1.value == v2.value
+        assert v1 is v2
 
         v3 = env.Value('c', 'build-c')
         assert v3.value == 'c', v3.value
-
 
 
     def test_Environment_global_variable(self):
@@ -3549,7 +3430,7 @@ def generate(env):
             assert x in over, bad_msg % x
 
     def test_parse_flags(self):
-        '''Test the Base class parse_flags argument'''
+        """Test the Base class parse_flags argument"""
         # all we have to show is that it gets to MergeFlags internally
         env = Environment(tools=[], parse_flags = '-X')
         assert env['CCFLAGS'] == ['-X'], env['CCFLAGS']
@@ -3563,7 +3444,7 @@ def generate(env):
         assert env['CPPDEFINES'] == ['FOO', 'BAR'], env['CPPDEFINES']
 
     def test_clone_parse_flags(self):
-        '''Test the env.Clone() parse_flags argument'''
+        """Test the env.Clone() parse_flags argument"""
         # all we have to show is that it gets to MergeFlags internally
         env = Environment(tools = [])
         env2 = env.Clone(parse_flags = '-X')
@@ -3750,8 +3631,6 @@ class OverrideEnvironmentTestCase(unittest.TestCase,TestEnvironmentFixture):
     # Environment()
     # FindFile()
     # Scanner()
-    # SourceSignatures()
-    # TargetSignatures()
 
     # It's unlikely Clone() will ever be called this way, so let the
     # other methods test that handling overridden values works.
@@ -3834,7 +3713,7 @@ class OverrideEnvironmentTestCase(unittest.TestCase,TestEnvironmentFixture):
         assert x == ['x3', 'y3', 'z3'], x
 
     def test_parse_flags(self):
-        '''Test the OverrideEnvironment parse_flags argument'''
+        """Test the OverrideEnvironment parse_flags argument"""
         # all we have to show is that it gets to MergeFlags internally
         env = SubstitutionEnvironment()
         env2 = env.Override({'parse_flags' : '-X'})
