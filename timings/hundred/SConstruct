@@ -23,13 +23,15 @@
 
 target_count = int(ARGUMENTS['TARGET_COUNT'])
 
-def copy_files( env, target, source ):
+
+def copy_files(env, target, source):
     for t, s in zip(target, source):
-        open(str(t),  'wb').write(open(str(s), 'rb').read())
+        open(str(t), 'wb').write(open(str(s), 'rb').read())
+
 
 source_list = ['source_%04d' % t for t in range(target_count)]
 target_list = ['target_%04d' % t for t in range(target_count)]
 
 env = Environment()
 
-env.Command( target_list, source_list, copy_files )
+env.Command(target_list, source_list, copy_files)

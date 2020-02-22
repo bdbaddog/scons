@@ -1826,9 +1826,12 @@ class TimeSCons(TestSCons):
         # TODO(sgk):  allow the caller to specify the target (argument)
         # that must be up-to-date.
         self.add_timing_options(kw)
-        self.up_to_date(arguments='.', **kw)
+        read_str = "SConscript:%s  took.*\n" % re.escape(self.workpath('SConstruct'))
+        self.up_to_date(arguments='.', read_str=read_str, **kw)
         sys.stdout.write(self.stdout())
         stats = self.collect_stats(self.stdout())
+
+
         # time-commands should always be 0.0 on a null build, because
         # no commands should be executed.  Remove it from the stats
         # so we don't trace it, but only if it *is* 0 so that we'll

@@ -44,7 +44,7 @@ import TestSCons
 # run   6:   9.695:  TARGET_COUNT=139
 # run   7:   9.670:  TARGET_COUNT=139
 
-test = TestSCons.TimeSCons(variables={'TARGET_COUNT':139})
+test = TestSCons.TimeSCons(variables={'TARGET_COUNT': 1000})
 
 for t in range(test.variables['TARGET_COUNT']):
     with open('source_%04d' % t, 'w') as f:
