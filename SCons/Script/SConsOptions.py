@@ -293,8 +293,8 @@ class SConsBadOptionError(optparse.BadOptionError):
     """Exception used to indicate that invalid command line options were specified
 
     :ivar str opt_str: The offending option specified on command line which is not recognized
-    :ivar OptionParser parser: The active argument parser
-
+    :ivar optparse.OptionParser parser: The active argument parser
+    :final:
     """
 
     def __init__(self, opt_str, parser=None):
