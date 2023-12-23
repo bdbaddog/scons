@@ -286,12 +286,12 @@ def subst_dict(target, source):
         dict['TARGETS'] = Targets_or_Sources(tnl)
         dict['TARGET'] = Target_or_Source(tnl)
 
-        # This is a total cheat, but hopefully this dictionary goes
-        # away soon anyway.  We just let these expand to $TARGETS
-        # because that's "good enough" for the use of ToolSurrogates
-        # (see test/ToolSurrogate.py) to generate documentation.
-        dict['CHANGED_TARGETS'] = '$TARGETS'
-        dict['UNCHANGED_TARGETS'] = '$TARGETS'
+        # # This is a total cheat, but hopefully this dictionary goes
+        # # away soon anyway.  We just let these expand to $TARGETS
+        # # because that's "good enough" for the use of ToolSurrogates
+        # # (see test/ToolSurrogate.py) to generate documentation.
+        # dict['CHANGED_TARGETS'] = '$TARGETS'
+        # dict['UNCHANGED_TARGETS'] = '$TARGETS'
     else:
         dict['TARGETS'] = NullNodesList
         dict['TARGET'] = NullNodesList
@@ -316,8 +316,8 @@ def subst_dict(target, source):
         # away soon anyway.  We just let these expand to $TARGETS
         # because that's "good enough" for the use of ToolSurrogates
         # (see test/ToolSurrogate.py) to generate documentation.
-        dict['CHANGED_SOURCES'] = '$SOURCES'
-        dict['UNCHANGED_SOURCES'] = '$SOURCES'
+        # dict['CHANGED_SOURCES'] = '$SOURCES'
+        # dict['UNCHANGED_SOURCES'] = '$SOURCES'
     else:
         dict['SOURCES'] = NullNodesList
         dict['SOURCE'] = NullNodesList
@@ -389,6 +389,7 @@ class StringSubber:
                      except Exception as e:
                           if e.__class__ in AllowableExceptions:
                                return ''
+                          breakpoint()
                           raise_exception(e, lvars['TARGETS'], old_s)
 
                 if s is None and NameError not in AllowableExceptions:

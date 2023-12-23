@@ -216,12 +216,15 @@ class Executor(metaclass=NoSlotsPyPy):
             else:
                 cs.extend(list(map(rfile, b.sources)))
                 ct.extend(b.targets)
-        self._changed_sources_list = SCons.Util.NodeList(cs)
+        self._changed_sources_list = SCons.Util.NodeList([rfile(n).get_subst_proxy() for n in cs])
+        # self._changed_sources_list = SCons.Util.NodeList(cs)
         self._changed_targets_list = SCons.Util.NodeList(ct)
         self._unchanged_sources_list = SCons.Util.NodeList(us)
         self._unchanged_targets_list = SCons.Util.NodeList(ut)
 
     def _get_changed_sources(self, *args, **kw):
+        # print("in _get_changed_sources")
+        # return self._get_sources(args,**kw)
         try:
             return self._changed_sources_list
         except AttributeError:
