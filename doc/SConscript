@@ -142,8 +142,17 @@ env.Depends(
     + [File(f'#/doc/generated/{n}.gen') for n in ('builders', 'functions', 'tools', 'variables')]
     + [File(f'#/doc/generated/{n}.mod') for n in ('builders', 'functions', 'tools', 'variables')],
 )
-Alias('ai-manpage', ai_man_page)
-Alias('doc', ai_man_page)
+
+# Install it alongside the other rendered formats, and include it in the
+# documentation tarball.
+ai_man_md = os.path.join(build, 'MD', 'scons-ai.md')
+env.InstallAs(target=env.File(ai_man_md), source=ai_man_page)
+tar_deps.append(ai_man_md)
+tar_list.append(ai_man_md)
+Local(ai_man_md)
+
+Alias('ai-manpage', [ai_man_page, ai_man_md])
+Alias('doc', [ai_man_page, ai_man_md])
 
 #
 # --- Helpers ---
