@@ -114,6 +114,38 @@ orig_env = env
 env = orig_env.Clone(SCONS_PY=File('#/scripts/scons.py').rfile())
 
 #
+# --- Condensed MAN page for AI consumption ---
+#
+# A token-minimized rendering of the MAN page, for feeding to a language
+# model: every documented entry is kept, but markup, cross-reference chrome,
+# examples and version history are dropped, which cuts it to roughly half the
+# tokens of scons.1.  This is generated from the checked-in DocBook sources
+# rather than from the built documentation, so it does not need the DocBook
+# toolchain and is built even when the rest of the doc build is skipped.
+#
+ai_man_generator = File('#/bin/scons-man-to-ai.py')
+ai_man_page = env.Command(
+    target=File('#/doc/man/scons-ai.md'),
+    source=File('#/doc/man/scons.xml'),
+    action=(
+        '$PYTHON %s -i ${SOURCE.abspath} -o ${TARGET.abspath}'
+        % ai_man_generator.abspath
+    ),
+)
+# The bulk of the content arrives by XInclude, and the link entities by
+# parameter entity, so those files are dependencies too.  SCons/__init__.py
+# supplies the version stamp but is deliberately not listed: it is itself
+# regenerated on every run, which would rebuild this target every time.
+env.Depends(
+    ai_man_page,
+    [ai_man_generator]
+    + [File(f'#/doc/generated/{n}.gen') for n in ('builders', 'functions', 'tools', 'variables')]
+    + [File(f'#/doc/generated/{n}.mod') for n in ('builders', 'functions', 'tools', 'variables')],
+)
+Alias('ai-manpage', ai_man_page)
+Alias('doc', ai_man_page)
+
+#
 # --- Helpers ---
 #
 def writeVersionXml(verfile, date, ver, rev, copyright_years):
