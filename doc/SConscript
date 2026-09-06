@@ -119,13 +119,14 @@ env = orig_env.Clone(SCONS_PY=File('#/scripts/scons.py').rfile())
 # A token-minimized rendering of the MAN page, for feeding to a language
 # model: every documented entry is kept, but markup, cross-reference chrome,
 # examples and version history are dropped, which cuts it to roughly half the
-# tokens of scons.1.  This is generated from the checked-in DocBook sources
-# rather than from the built documentation, so it does not need the DocBook
-# toolchain and is built even when the rest of the doc build is skipped.
+# tokens of scons.1.  The input is the checked-in DocBook source rather than
+# the built documentation, so this does not need the DocBook toolchain and is
+# produced even when the rest of the doc build is skipped.
 #
 ai_man_generator = File('#/bin/scons-man-to-ai.py')
+ai_man_md = os.path.join(build, 'MD', 'scons-ai.md')
 ai_man_page = env.Command(
-    target=File('#/doc/man/scons-ai.md'),
+    target=env.File(ai_man_md),
     source=File('#/doc/man/scons.xml'),
     action=(
         '$PYTHON %s -i ${SOURCE.abspath} -o ${TARGET.abspath}'
@@ -143,16 +144,13 @@ env.Depends(
     + [File(f'#/doc/generated/{n}.mod') for n in ('builders', 'functions', 'tools', 'variables')],
 )
 
-# Install it alongside the other rendered formats, and include it in the
-# documentation tarball.
-ai_man_md = os.path.join(build, 'MD', 'scons-ai.md')
-env.InstallAs(target=env.File(ai_man_md), source=ai_man_page)
+# Ship it in the documentation tarball alongside the other rendered formats.
 tar_deps.append(ai_man_md)
 tar_list.append(ai_man_md)
 Local(ai_man_md)
 
-Alias('ai-manpage', [ai_man_page, ai_man_md])
-Alias('doc', [ai_man_page, ai_man_md])
+Alias('ai-manpage', ai_man_page)
+Alias('doc', ai_man_page)
 
 #
 # --- Helpers ---
