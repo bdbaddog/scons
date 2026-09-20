@@ -41,6 +41,7 @@ import SCons.Errors
 import SCons.Platform.win32
 import SCons.Tool
 import SCons.Tool.msvs
+from SCons.Tool import cxxmodules
 import SCons.Util
 import SCons.Warnings
 import SCons.Scanner.RC
@@ -279,6 +280,19 @@ def generate(env) -> None:
     env['CPPDEFSUFFIX']  = ''
     env['INCPREFIX']  = '/I'
     env['INCSUFFIX']  = ''
+
+    # C++20 modules.  MSVC writes BMIs as .ifc, scans with
+    # /scanDependencies, and like Clang needs every transitively
+    # imported BMI referenced explicitly.
+    cxxmodules.generate(env)
+    env['CXXMODULESUFFIX'] = '.ifc'
+    env['CXXMODULEFLAGPREFIX'] = '/reference '
+    env['CXXMODULEOUTPUTFLAG'] = '/ifcOutput'
+    env['CXXMODULESTD'] = 'c++20'
+    env['CXXMODULESCANCOM'] = (
+        '$CXX /std:$CXXMODULESTD /scanDependencies $TARGET '
+        '$CXXMODULESCANFLAGS $_CCCOMCOM /c $SOURCE'
+    )
 #    env.Append(OBJEMITTER = [static_object_emitter])
 #    env.Append(SHOBJEMITTER = [shared_object_emitter])
     env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME'] = 1

@@ -39,6 +39,7 @@ from subprocess import DEVNULL, PIPE
 import SCons.Tool
 import SCons.Util
 import SCons.Tool.cxx
+from SCons.Tool import cxxmodules
 from SCons.Tool.clangCommon import get_clang_install_dirs
 from SCons.Tool.MSCommon import msvc_setup_env_once
 
@@ -88,6 +89,19 @@ def generate(env) -> None:
 
     env['CCDEPFLAGS'] = '-MMD -MF ${TARGET}.d'
     env["NINJA_DEPFILE_PARSE_FORMAT"] = 'clang'
+
+    # C++20 modules.  Clang scans with the separate clang-scan-deps
+    # binary rather than the compiler driver, and requires every
+    # transitively imported BMI to be named on the command line.
+    cxxmodules.generate(env)
+    env['CXXMODULESUFFIX'] = '.pcm'
+    env['CXXMODULEFLAGPREFIX'] = '-fmodule-file='
+    env['CXXMODULEOUTPUTFLAG'] = '-fmodule-output='
+    env['CXXMODULESCAN'] = env.Detect('clang-scan-deps') or 'clang-scan-deps'
+    env['CXXMODULESCANCOM'] = (
+        '$CXXMODULESCAN -format=p1689 $CXXMODULESCANFLAGS -- '
+        '$CXX -std=$CXXMODULESTD -c $SOURCE $_CCCOMCOM > $TARGET'
+    )
 
 
 def exists(env):

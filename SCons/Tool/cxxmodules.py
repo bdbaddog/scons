@@ -438,9 +438,16 @@ def generate(env) -> None:
     env['CXXMODULEDIR'] = ''
     env['CXXMODULEFLAGPREFIX'] = '-fmodule-file='
     env['CXXMODULEOUTPUTFLAG'] = '-fmodule-output='
+    # Language standard used for the scan step.  Modules require at
+    # least C++20; the scan must agree with the eventual compile or the
+    # compiler may report different imports than it later honours.
+    env['CXXMODULESTD'] = 'c++20'
     env['CXXMODULESCANFLAGS'] = SCons.Util.CLVar('')
     env['_CXXMODULEFLAGS'] = _cxxmodule_flags
-    env.SetDefault(CXXMODULESUFFIXES=CXXModuleSuffixes)
+    # Plain assignment rather than SetDefault: generate() must work with
+    # the minimal dict-like environments used in the tool unit tests.
+    if 'CXXMODULESUFFIXES' not in env:
+        env['CXXMODULESUFFIXES'] = list(CXXModuleSuffixes)
 
 
 def exists(env) -> bool:

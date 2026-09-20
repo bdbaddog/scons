@@ -38,6 +38,7 @@ import SCons.Util
 
 from . import gcc
 from . import cxx
+from . import cxxmodules
 
 compilers = ['g++']
 
@@ -67,6 +68,19 @@ def generate(env) -> None:
 
     env['CCDEPFLAGS'] = '-MMD -MF ${TARGET}.d'
     env["NINJA_DEPFILE_PARSE_FORMAT"] = 'gcc'
+
+    # C++20 modules.  GCC writes BMIs as .gcm and locates imported
+    # modules itself via its module mapper, but accepts being told
+    # explicitly, so the common transitive-closure path works here too.
+    cxxmodules.generate(env)
+    env['CXXMODULESUFFIX'] = '.gcm'
+    env['CXXMODULEFLAGPREFIX'] = '-fmodule-file='
+    env['CXXMODULEOUTPUTFLAG'] = '-fmodule-output='
+    env['CXXMODULESCANCOM'] = (
+        '$CXX -std=$CXXMODULESTD -fmodules -fdeps-format=p1689r5 '
+        '-fdeps-file=$TARGET -fsyntax-only $CXXMODULESCANFLAGS '
+        '$_CCCOMCOM $SOURCE'
+    )
 
 
 
