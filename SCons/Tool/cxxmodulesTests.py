@@ -147,6 +147,75 @@ class ParseP1689TestCase(unittest.TestCase):
         self.assertEqual(infos[0].requires, ["A"])
 
 
+class RealCompilerOutputTestCase(unittest.TestCase):
+    """Documents how actual compiler output differs from the examples.
+
+    Verified against GCC 15.2.0 and the clang-scan-deps documentation.
+    The compilers disagree about which optional fields they emit, so
+    these guard the portability assumptions the rest of the code makes.
+    """
+
+    # Verbatim from g++-15 -fdeps-format=p1689r5.  Note: no source-path
+    # anywhere, primary-output is an object name, and version is 0.
+    GCC_OUTPUT = """{
+    "rules": [
+    {
+    "primary-output": "a-b.o",
+    "provides": [
+    {
+    "logical-name": "B",
+    "is-interface": true
+    }
+    ],
+    "requires": [
+    {
+    "logical-name": "A"
+    }
+    ]
+    }
+    ],
+    "version": 0,
+    "revision": 0
+    }"""
+
+    def test_gcc_output_parses(self) -> None:
+        infos = parse_p1689('b.ddi', self.GCC_OUTPUT)
+        self.assertEqual(infos[0].provides, ["B"])
+        self.assertEqual(infos[0].requires, ["A"])
+
+    def test_gcc_version_zero_accepted(self) -> None:
+        """GCC reports version 0; only presence is required."""
+        self.assertTrue(parse_p1689('b.ddi', self.GCC_OUTPUT))
+
+    def test_explicit_source_overrides_primary_output(self) -> None:
+        """BMI names must not depend on the compiler's object naming.
+
+        Without an explicit source, GCC's output would yield a BMI named
+        after 'a-b.o'.  SCons knows the real source and supplies it.
+        """
+        infos = parse_p1689('b.ddi', self.GCC_OUTPUT, source='b.cppm')
+        self.assertEqual(infos[0].source, 'b.cppm')
+        provided, _ = collate(infos, suffix='.gcm')
+        self.assertEqual(provided, {"B": "b.gcm"})
+
+    def test_without_explicit_source_falls_back(self) -> None:
+        infos = parse_p1689('b.ddi', self.GCC_OUTPUT)
+        self.assertEqual(infos[0].source, 'a-b.o')
+
+    def test_clang_style_source_path_used(self) -> None:
+        """Clang does emit source-path; it is honoured when present."""
+        doc = ddi([{
+            "primary-output": "M.o",
+            "provides": [{
+                "is-interface": True,
+                "logical-name": "M",
+                "source-path": "M.cppm",
+            }],
+        }])
+        infos = parse_p1689('m.ddi', doc)
+        self.assertEqual(infos[0].source, 'M.cppm')
+
+
 class BmiNameTestCase(unittest.TestCase):
     def test_derived_from_source_not_module(self) -> None:
         self.assertEqual(bmi_name('a.cppm', '.pcm'), 'a.pcm')

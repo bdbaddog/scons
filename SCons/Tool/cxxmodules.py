@@ -150,11 +150,20 @@ def _module_names(entries, kind, path, skip_header_units: bool = False):
     return names
 
 
-def parse_p1689(path, contents=None):
+def parse_p1689(path, contents=None, source=None):
     """Parse a P1689R5 dependency file into a list of ``ModuleInfo``.
 
     *path* names the file (used in diagnostics); *contents* may be
     supplied directly to avoid a read, which is what the unit tests do.
+    *source* is the source file that was scanned.
+
+    Pass *source* whenever it is known.  ``source-path`` is optional in
+    P1689R5 and the compilers disagree about it: Clang emits it, GCC
+    does not and reports only ``primary-output`` (an object file name).
+    Since BMI paths are derived from the source file name, taking the
+    source from the .ddi would make BMI names depend on which compiler
+    produced it.  SCons always knows which source it scanned, so it
+    supplies the name rather than trusting the file.
 
     The schema is defined by
     https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p1689r5.html
@@ -217,13 +226,18 @@ def parse_p1689(path, contents=None):
             and e.get('is-interface', True)
         ]
 
-        source = rule.get('primary-output')
-        for entry in provides_raw:
-            if isinstance(entry, dict) and entry.get('source-path'):
-                source = entry['source-path']
-                break
+        rule_source = source
+        if rule_source is None:
+            # No explicit source: fall back to what the file says.
+            rule_source = rule.get('primary-output')
+            for entry in provides_raw:
+                if isinstance(entry, dict) and entry.get('source-path'):
+                    rule_source = entry['source-path']
+                    break
 
-        infos.append(ModuleInfo(source, provides, requires, interface_names))
+        infos.append(
+            ModuleInfo(rule_source, provides, requires, interface_names)
+        )
 
     return infos
 
@@ -379,7 +393,10 @@ def _read_module_map(env):
             # Scan has not run yet for this TU.  Not an error: the flags
             # are substituted again once the .ddi exists.
             continue
-        infos.extend(parse_p1689(path))
+        # The .ddi node records the source it was scanned from, so BMI
+        # names stay independent of what the compiler chose to report.
+        src = getattr(node.attributes, 'cxxmodule_source', None)
+        infos.extend(parse_p1689(path, source=src))
 
     provided_by, required_by = collate(infos, suffix, moddir)
 
@@ -443,6 +460,8 @@ def generate(env) -> None:
     # compiler may report different imports than it later honours.
     env['CXXMODULESTD'] = 'c++20'
     env['CXXMODULESCANFLAGS'] = SCons.Util.CLVar('')
+    # Sink for scan output we do not want (see gxx.py's -MF).
+    env['CXXMODULESCANDEVNULL'] = os.devnull
     env['_CXXMODULEFLAGS'] = _cxxmodule_flags
     # Plain assignment rather than SetDefault: generate() must work with
     # the minimal dict-like environments used in the tool unit tests.

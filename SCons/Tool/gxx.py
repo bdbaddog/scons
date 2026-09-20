@@ -76,10 +76,13 @@ def generate(env) -> None:
     env['CXXMODULESUFFIX'] = '.gcm'
     env['CXXMODULEFLAGPREFIX'] = '-fmodule-file='
     env['CXXMODULEOUTPUTFLAG'] = '-fmodule-output='
+    # GCC requires -M/-MM alongside -fdeps-format, even though the
+    # make-style output is not wanted here; -MF sends it to the bit
+    # bucket while -fdeps-file receives the P1689 JSON.
     env['CXXMODULESCANCOM'] = (
         '$CXX -std=$CXXMODULESTD -fmodules -fdeps-format=p1689r5 '
-        '-fdeps-file=$TARGET -fsyntax-only $CXXMODULESCANFLAGS '
-        '$_CCCOMCOM $SOURCE'
+        '-fdeps-file=$TARGET -M -MF $CXXMODULESCANDEVNULL -fsyntax-only '
+        '$CXXMODULESCANFLAGS $_CCCOMCOM $SOURCE'
     )
 
 
