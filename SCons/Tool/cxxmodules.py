@@ -462,6 +462,12 @@ def generate(env) -> None:
     env['CXXMODULESCANFLAGS'] = SCons.Util.CLVar('')
     # Sink for scan output we do not want (see gxx.py's -MF).
     env['CXXMODULESCANDEVNULL'] = os.devnull
+    # The object the scanned TU will eventually produce.  GCC's
+    # -fdeps-target wants this so the scan result can be correlated
+    # with the compile that follows.
+    env['CXXMODULESCANOBJ'] = (
+        '${SOURCE.dir}/${SOURCE.filebase}$OBJSUFFIX'
+    )
     env['_CXXMODULEFLAGS'] = _cxxmodule_flags
     # Plain assignment rather than SetDefault: generate() must work with
     # the minimal dict-like environments used in the tool unit tests.

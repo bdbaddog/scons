@@ -79,9 +79,13 @@ def generate(env) -> None:
     # GCC requires -M/-MM alongside -fdeps-format, even though the
     # make-style output is not wanted here; -MF sends it to the bit
     # bucket while -fdeps-file receives the P1689 JSON.
+    # -fdeps-target names the object the scanned TU will eventually
+    # produce, so the build system can correlate the scan with the
+    # compile; without it GCC guesses and reports a mangled name.
     env['CXXMODULESCANCOM'] = (
         '$CXX -std=$CXXMODULESTD -fmodules -fdeps-format=p1689r5 '
-        '-fdeps-file=$TARGET -M -MF $CXXMODULESCANDEVNULL -fsyntax-only '
+        '-fdeps-file=$TARGET -fdeps-target=$CXXMODULESCANOBJ '
+        '-M -MF $CXXMODULESCANDEVNULL -fsyntax-only '
         '$CXXMODULESCANFLAGS $_CCCOMCOM $SOURCE'
     )
 
