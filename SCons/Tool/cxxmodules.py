@@ -403,6 +403,30 @@ def transitive_closure(source, required_by, provided_by, provider_source):
     return sorted(provided_by[name] for name in seen)
 
 
+def transitive_closure_named(source, required_by, provided_by,
+                             provider_source):
+    """Like :func:`transitive_closure` but returns ``(name, bmi)`` pairs.
+
+    Clang's ``-fmodule-file=`` and MSVC's ``/reference`` both accept a
+    ``NAME=PATH`` form.  Clang also accepts a bare path, but that
+    spelling is deprecated, and MSVC needs the name, so the named form
+    is preferred where the compiler wants it.
+    """
+    seen = set()
+    stack = list(required_by.get(source, []))
+
+    while stack:
+        name = stack.pop()
+        if name in seen or name not in provided_by:
+            continue
+        seen.add(name)
+        nxt = provider_source.get(name)
+        if nxt is not None:
+            stack.extend(required_by.get(nxt, []))
+
+    return sorted((name, provided_by[name]) for name in seen)
+
+
 def _read_module_map(env):
     """Return the collated module map, computing it once per environment.
 
@@ -474,10 +498,14 @@ def _cxxmodule_flags(source, target, env, for_signature):
         raise
 
     src = str(source[0])
-    bmis = transitive_closure(src, required_by, provided_by, provider_source)
+    named = transitive_closure_named(
+        src, required_by, provided_by, provider_source
+    )
 
     prefix = env.subst('$CXXMODULEFLAGPREFIX')
-    return [prefix + bmi for bmi in bmis]
+    if env.subst('$CXXMODULEFLAGNAMED'):
+        return [f'{prefix}{name}={bmi}' for name, bmi in named]
+    return [prefix + bmi for _, bmi in named]
 
 
 def generate(env) -> None:
@@ -491,6 +519,8 @@ def generate(env) -> None:
     env['CXXMODULEDEPSUFFIX'] = CXXModuleDepSuffix
     env['CXXMODULEDIR'] = ''
     env['CXXMODULEFLAGPREFIX'] = '-fmodule-file='
+    # Whether the BMI flag takes NAME=PATH rather than a bare path.
+    env['CXXMODULEFLAGNAMED'] = ''
     env['CXXMODULEOUTPUTFLAG'] = '-fmodule-output='
     # Language standard used for the scan step.  Modules require at
     # least C++20; the scan must agree with the eventual compile or the

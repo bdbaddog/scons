@@ -287,6 +287,7 @@ def generate(env) -> None:
     cxxmodules.generate(env)
     env['CXXMODULESUFFIX'] = '.ifc'
     env['CXXMODULEFLAGPREFIX'] = '/reference '
+    env['CXXMODULEFLAGNAMED'] = '1'
     env['CXXMODULEOUTPUTFLAG'] = '/ifcOutput'
     env['CXXMODULESTD'] = 'c++20'
     env['CXXMODULESCANCOM'] = (

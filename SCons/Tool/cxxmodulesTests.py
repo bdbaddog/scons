@@ -36,6 +36,7 @@ from SCons.Tool.cxxmodules import (
     parse_p1689,
     scanner_available,
     transitive_closure,
+    transitive_closure_named,
 )
 
 
@@ -427,6 +428,75 @@ class ScannerAvailableTestCase(unittest.TestCase):
 
     def test_nothing_configured(self) -> None:
         self.assertFalse(scanner_available(self.FakeEnv(found=None)))
+
+
+class ClangScanDepsTestCase(unittest.TestCase):
+    """Real clang-scan-deps output differs from GCC's.
+
+    Captured from clang-scan-deps 16.0.6 scanning a file containing
+    'export module stats;' and 'import math;'.
+    """
+
+    CLANG_OUTPUT = '''{
+      "revision": 0,
+      "rules": [
+        {
+          "primary-output": "stats.o",
+          "provides": [
+            {
+              "is-interface": true,
+              "logical-name": "stats",
+              "source-path": "stats.cppm"
+            }
+          ],
+          "requires": [
+            { "logical-name": "math" }
+          ]
+        }
+      ],
+      "version": 1
+    }'''
+
+    def test_clang_output_parses(self) -> None:
+        infos = parse_p1689('stats.ddi', self.CLANG_OUTPUT)
+        self.assertEqual(infos[0].provides, ['stats'])
+        self.assertEqual(infos[0].requires, ['math'])
+
+    def test_clang_reports_source_path(self) -> None:
+        """Unlike GCC, Clang names the source; it is used as-is."""
+        infos = parse_p1689('stats.ddi', self.CLANG_OUTPUT)
+        self.assertEqual(infos[0].source, 'stats.cppm')
+
+    def test_clang_reports_version_one(self) -> None:
+        """Clang says version 1 where GCC says 0; both are accepted."""
+        self.assertTrue(parse_p1689('stats.ddi', self.CLANG_OUTPUT))
+
+
+class NamedClosureTestCase(unittest.TestCase):
+    """Clang and MSVC want NAME=PATH; GCC takes a bare path."""
+
+    def setUp(self) -> None:
+        self.provided = {'math': 'math.pcm', 'stats': 'stats.pcm'}
+        self.provider_source = {'math': 'math.cppm', 'stats': 'stats.cppm'}
+        self.required = {
+            'math.cppm': [],
+            'stats.cppm': ['math'],
+            'main.cpp': ['stats'],
+        }
+
+    def test_returns_name_path_pairs(self) -> None:
+        self.assertEqual(
+            transitive_closure_named('main.cpp', self.required,
+                                     self.provided, self.provider_source),
+            [('math', 'math.pcm'), ('stats', 'stats.pcm')],
+        )
+
+    def test_matches_unnamed_closure(self) -> None:
+        named = transitive_closure_named('main.cpp', self.required,
+                                         self.provided, self.provider_source)
+        plain = transitive_closure('main.cpp', self.required,
+                                   self.provided, self.provider_source)
+        self.assertEqual([b for _, b in named], plain)
 
 
 class FindCycleTestCase(unittest.TestCase):

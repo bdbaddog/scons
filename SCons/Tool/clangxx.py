@@ -96,6 +96,8 @@ def generate(env) -> None:
     cxxmodules.generate(env)
     env['CXXMODULESUFFIX'] = '.pcm'
     env['CXXMODULEFLAGPREFIX'] = '-fmodule-file='
+    # Clang accepts a bare path too, but that form is deprecated.
+    env['CXXMODULEFLAGNAMED'] = '1'
     env['CXXMODULEOUTPUTFLAG'] = '-fmodule-output='
     env['CXXMODULESCAN'] = env.Detect('clang-scan-deps') or 'clang-scan-deps'
     env['CXXMODULESCANCOM'] = (
