@@ -30,6 +30,7 @@ import unittest
 from SCons.Tool.cxxmodules import (
     P1689Error,
     bmi_name,
+    check_scan_usable,
     collate,
     find_cycle,
     parse_p1689,
@@ -226,6 +227,66 @@ class BmiNameTestCase(unittest.TestCase):
             bmi_name('src/a.cppm', '.gcm', 'bmi'),
             os.path.join('bmi', 'a.gcm'),
         )
+
+
+class BrokenScannerTestCase(unittest.TestCase):
+    """GCC 14's scanner reports nothing; that must not pass silently."""
+
+    # Verbatim from g++-mp-14 (MacPorts GCC 14.3.0) scanning a file
+    # that contains 'export module stats;' and 'import math;'.
+    GCC14_OUTPUT = """{
+    "rules": [
+    {
+    "primary-output": "stats.o",
+    "requires": [
+    ]
+    }
+    ],
+    "version": 0,
+    "revision": 0
+    }"""
+
+    def test_gcc14_output_has_nothing(self) -> None:
+        """Document the actual broken output: no provides, no requires."""
+        infos = parse_p1689('stats.ddi', self.GCC14_OUTPUT,
+                            source='stats.cppm')
+        self.assertEqual(infos[0].provides, [])
+        self.assertEqual(infos[0].requires, [])
+
+    def test_empty_scan_rejected(self) -> None:
+        infos = parse_p1689('stats.ddi', self.GCC14_OUTPUT,
+                            source='stats.cppm')
+        with self.assertRaises(P1689Error) as cm:
+            check_scan_usable(infos, ['stats.cppm'])
+        msg = str(cm.exception)
+        self.assertIn('no modules at all', msg)
+        self.assertIn('GCC 15', msg)
+
+    def test_empty_scan_would_yield_empty_map(self) -> None:
+        """Without the guard this silently produces no ordering."""
+        infos = parse_p1689('stats.ddi', self.GCC14_OUTPUT,
+                            source='stats.cppm')
+        provided, _ = collate(infos)
+        self.assertEqual(provided, {})
+
+    def test_no_infos_is_not_an_error(self) -> None:
+        """Nothing scanned at all is a different situation."""
+        check_scan_usable([])
+
+    def test_working_scan_accepted(self) -> None:
+        infos = parse_p1689('t.ddi', ddi([{
+            "primary-output": "a.o",
+            "provides": [{"logical-name": "A", "source-path": "a.cppm"}],
+        }]))
+        check_scan_usable(infos, ['a.cppm'])
+
+    def test_consumer_only_scan_accepted(self) -> None:
+        """A TU that only imports is still evidence the scanner works."""
+        infos = parse_p1689('t.ddi', ddi([{
+            "primary-output": "main.o",
+            "requires": [{"logical-name": "A"}],
+        }]))
+        check_scan_usable(infos, ['main.cpp'])
 
 
 class CollateTestCase(unittest.TestCase):

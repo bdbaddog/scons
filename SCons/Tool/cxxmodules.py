@@ -255,6 +255,38 @@ def bmi_name(source, suffix: str = '.pcm', moddir: str = '') -> str:
     return os.path.join(moddir, base + suffix) if moddir else base + suffix
 
 
+def check_scan_usable(infos, sources=None) -> None:
+    """Fail loudly when a scan reports nothing for module sources.
+
+    GCC 14's P1689 scanner is broken: for a file that plainly contains
+    ``export module foo;`` it emits a well-formed dependency file with
+    no ``provides`` and empty ``requires``.  Nothing raises, the module
+    map comes out empty, no BMI flags are emitted and no ordering is
+    imposed -- and the build then fails much later with a confusing
+    "failed to read compiled module", or silently succeeds when the
+    compiles happen to run in a workable order.
+
+    A scan that discovers no modules at all across every module source
+    is therefore treated as a broken toolchain rather than as a project
+    that genuinely has none.
+    """
+    if not infos:
+        return
+    if any(info.provides or info.requires for info in infos):
+        return
+
+    where = ''
+    if sources:
+        where = ' (scanned: %s)' % ', '.join(str(s) for s in sources)
+    raise P1689Error(
+        "module scan reported no modules at all%s.\n"
+        "The compiler's dependency scanner is not usable.  GCC 14 is "
+        "known to do this: it compiles modules correctly but its "
+        "P1689 scanner always reports nothing, so no build order can "
+        "be determined.  GCC 15 or later is required." % where
+    )
+
+
 def collate(infos, suffix: str = '.pcm', moddir: str = ''):
     """Build the module map from parsed P1689 results.
 
@@ -397,6 +429,11 @@ def _read_module_map(env):
         # names stay independent of what the compiler chose to report.
         src = getattr(node.attributes, 'cxxmodule_source', None)
         infos.extend(parse_p1689(path, source=src))
+
+    # A scan that found nothing at all means a broken scanner (GCC 14),
+    # not a project without modules -- we only get here for .ddi files
+    # produced from module sources.
+    check_scan_usable(infos, ddi_nodes)
 
     provided_by, required_by = collate(infos, suffix, moddir)
 
