@@ -34,6 +34,7 @@ from SCons.Tool.cxxmodules import (
     collate,
     find_cycle,
     parse_p1689,
+    scanner_available,
     transitive_closure,
 )
 
@@ -391,6 +392,41 @@ class TransitiveClosureTestCase(unittest.TestCase):
                                self.provider_source),
             ["a.pcm", "b.pcm", "c.pcm"],
         )
+
+
+class ScannerAvailableTestCase(unittest.TestCase):
+    """Clang needs a separate clang-scan-deps binary that may be absent."""
+
+    class FakeEnv(dict):
+        def __init__(self, found=None, **kw) -> None:
+            super().__init__(**kw)
+            self._found = found
+
+        def WhereIs(self, prog):
+            return self._found
+
+    def test_missing_scan_binary(self) -> None:
+        env = self.FakeEnv(found=None, CXXMODULESCAN='clang-scan-deps')
+        self.assertFalse(scanner_available(env))
+
+    def test_present_scan_binary(self) -> None:
+        env = self.FakeEnv(found='/usr/bin/clang-scan-deps',
+                           CXXMODULESCAN='clang-scan-deps')
+        self.assertTrue(scanner_available(env))
+
+    def test_absolute_path_accepted(self) -> None:
+        """An explicit absolute path need not be on PATH."""
+        env = self.FakeEnv(found=None,
+                           CXXMODULESCAN='/opt/llvm/bin/clang-scan-deps')
+        self.assertTrue(scanner_available(env))
+
+    def test_driver_based_scan(self) -> None:
+        """GCC and MSVC scan with the compiler itself, not a separate tool."""
+        env = self.FakeEnv(found=None, CXXMODULESCANCOM='$CXX -fdeps-format=...')
+        self.assertTrue(scanner_available(env))
+
+    def test_nothing_configured(self) -> None:
+        self.assertFalse(scanner_available(self.FakeEnv(found=None)))
 
 
 class FindCycleTestCase(unittest.TestCase):

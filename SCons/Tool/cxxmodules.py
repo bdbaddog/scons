@@ -512,6 +512,21 @@ def generate(env) -> None:
         env['CXXMODULESUFFIXES'] = list(CXXModuleSuffixes)
 
 
+def scanner_available(env) -> bool:
+    """Whether a usable module dependency scanner was found.
+
+    Clang scans with a separate ``clang-scan-deps`` binary that is not
+    always installed alongside the compiler -- Apple's clang ships
+    without it, and without C++20 modules support at all.  GCC and MSVC
+    scan with the compiler driver itself, so for them this is just
+    whether the compiler exists.
+    """
+    scan = env.get('CXXMODULESCAN')
+    if scan:
+        return bool(env.WhereIs(scan) or os.path.isabs(str(scan)))
+    return bool(env.get('CXXMODULESCANCOM'))
+
+
 def exists(env) -> bool:
     """C++20 module support needs no tool of its own."""
     return True
