@@ -467,6 +467,31 @@ class ClangScanDepsTestCase(unittest.TestCase):
         infos = parse_p1689('stats.ddi', self.CLANG_OUTPUT)
         self.assertEqual(infos[0].source, 'stats.cppm')
 
+    def test_transitive_bmi_required(self) -> None:
+        """Clang needs every transitive BMI named explicitly.
+
+        Verified on clang 17.0.6: omitting a transitively imported BMI
+        compiles but warns '-Wread-modules-implicitly', and that
+        fallback is removed in clang 18.  Passing the full closure is
+        the only future-proof behaviour, and it silences the warning.
+        """
+        provided = {'math': 'math.pcm', 'stats': 'stats.pcm'}
+        provider_source = {'math': 'math.cppm', 'stats': 'stats.cppm'}
+        required = {'math.cppm': [], 'stats.cppm': ['math'],
+                    'main.cpp': ['stats']}
+        # main imports only stats, but math must still be passed.
+        self.assertEqual(
+            transitive_closure('main.cpp', required, provided,
+                               provider_source),
+            ['math.pcm', 'stats.pcm'],
+        )
+
+    def test_clang_16_and_17_agree(self) -> None:
+        """The P1689 schema is stable across clang 16 and 17."""
+        infos = parse_p1689('stats.ddi', self.CLANG_OUTPUT)
+        self.assertEqual(infos[0].provides, ['stats'])
+        self.assertEqual(infos[0].interface_names, ['stats'])
+
     def test_clang_reports_version_one(self) -> None:
         """Clang says version 1 where GCC says 0; both are accepted."""
         self.assertTrue(parse_p1689('stats.ddi', self.CLANG_OUTPUT))
