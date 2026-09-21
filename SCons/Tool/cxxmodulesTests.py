@@ -470,10 +470,15 @@ class ClangScanDepsTestCase(unittest.TestCase):
     def test_transitive_bmi_required(self) -> None:
         """Clang needs every transitive BMI named explicitly.
 
-        Verified on clang 17.0.6: omitting a transitively imported BMI
-        compiles but warns '-Wread-modules-implicitly', and that
-        fallback is removed in clang 18.  Passing the full closure is
-        the only future-proof behaviour, and it silences the warning.
+        On clang 17.0.6 omitting a transitively imported BMI compiles
+        but warns '-Wread-modules-implicitly', saying the fallback
+        goes away in clang 18.  It did: on clang 23.1.0 the same
+        omission is a hard error,
+
+            error: failed to find module file for module 'math'
+
+        so passing the full closure is mandatory on any modern Clang,
+        not merely tidier.
         """
         provided = {'math': 'math.pcm', 'stats': 'stats.pcm'}
         provider_source = {'math': 'math.cppm', 'stats': 'stats.cppm'}
